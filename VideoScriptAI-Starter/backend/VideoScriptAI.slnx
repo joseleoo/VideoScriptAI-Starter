@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VideoScriptAI.Domain/VideoScriptAI.Domain.csproj" />
+    <Project Path="src/VideoScriptAI.Application/VideoScriptAI.Application.csproj" />
+    <Project Path="src/VideoScriptAI.Infrastructure/VideoScriptAI.Infrastructure.csproj" />
+    <Project Path="src/VideoScriptAI.API/VideoScriptAI.API.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VideoScriptAI.Domain.Tests/VideoScriptAI.Domain.Tests.csproj" />
+  </Folder>
+</Solution>
