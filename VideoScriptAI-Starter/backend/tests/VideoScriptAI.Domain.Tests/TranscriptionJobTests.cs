@@ -1,5 +1,6 @@
 using VideoScriptAI.Domain.Entities;
 using VideoScriptAI.Domain.Enums;
+using Xunit;
 
 namespace VideoScriptAI.Domain.Tests;
 

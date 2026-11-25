@@ -5,6 +5,6 @@
   <ItemGroup>
     <ProjectReference Include="..\VideoScriptAI.Application\VideoScriptAI.Application.csproj" />
     <ProjectReference Include="..\VideoScriptAI.Infrastructure\VideoScriptAI.Infrastructure.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
   </ItemGroup>
 </Project>

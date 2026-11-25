@@ -9,7 +9,7 @@ This repository contains the initial solution structure and architectural contra
 ## Requirements
 
 - Windows 10/11 x64
-- .NET 10 SDK
+- .NET 10 SDK (a newer SDK can also target `net10.0`; the 10.x runtime is required)
 - Node.js LTS (for Vite development/build only)
 - FFmpeg
 - whisper.cpp Windows CPU build (`whisper-cli.exe`)
@@ -20,7 +20,7 @@ This repository contains the initial solution structure and architectural contra
 - `backend/`: .NET solution and projects
 - `frontend/`: React + TypeScript + Vite
 - `engines/`: place external FFmpeg/Whisper binaries and models here (do not commit binaries/models)
-- `storage/`: runtime data (ignored by Git)
+- `storage/`: optional scratch folder (ignored by Git); runtime data defaults to `%LOCALAPPDATA%/VideoScriptAI`
 - `docs/`: architecture and implementation notes
 
 ## First-time setup

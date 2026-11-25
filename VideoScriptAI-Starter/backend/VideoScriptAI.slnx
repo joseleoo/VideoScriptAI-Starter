@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/VideoScriptAI.Domain.Tests/VideoScriptAI.Domain.Tests.csproj" />
+    <Project Path="tests/VideoScriptAI.Infrastructure.Tests/VideoScriptAI.Infrastructure.Tests.csproj" />
   </Folder>
 </Solution>

@@ -9,6 +9,7 @@
 node_modules/
 dist/
 .vite/
+*.tsbuildinfo
 
 # Local configuration/secrets
 .env
@@ -20,6 +21,8 @@ appsettings.Local.json
 /storage/**
 !/storage/.gitkeep
 /engines/whisper/*.exe
+/engines/whisper/*.dll
+/engines/whisper/*.zip
 /engines/whisper/models/**
 /engines/ffmpeg/**
 *.mp4
