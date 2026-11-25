@@ -6,6 +6,7 @@
     <ProjectReference Include="..\VideoScriptAI.Domain\VideoScriptAI.Domain.csproj" />
     <ProjectReference Include="..\VideoScriptAI.Application\VideoScriptAI.Application.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.15" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.15" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

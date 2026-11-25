@@ -6,5 +6,9 @@
     <ProjectReference Include="..\VideoScriptAI.Application\VideoScriptAI.Application.csproj" />
     <ProjectReference Include="..\VideoScriptAI.Infrastructure\VideoScriptAI.Infrastructure.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 </Project>
