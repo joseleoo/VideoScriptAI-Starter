@@ -27,6 +27,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+builder.Services.AddHttpClient();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("LocalReact", policy =>

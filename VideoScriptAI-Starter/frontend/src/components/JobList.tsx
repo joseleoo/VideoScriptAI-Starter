@@ -26,6 +26,7 @@ export default function JobList({ jobs, selectedId, onSelect }: Props) {
             <span className={`badge status-${job.status.toLowerCase()}`}>{job.status}</span>
           </div>
           <div className="job-row-meta">
+            <span>{job.source === "Url" ? "URL" : "Archivo"}</span>
             <span>{job.model}</span>
             <span>{new Date(job.createdAtUtc).toLocaleString()}</span>
           </div>

@@ -48,6 +48,31 @@ public sealed class JobsController(IJobApplicationService jobs) : ControllerBase
         }
     }
 
+    [HttpPost("from-url")]
+    [Consumes("application/json")]
+    public async Task<IActionResult> CreateFromUrl(
+        [FromBody] CreateJobFromUrlRequest? request,
+        CancellationToken cancellationToken)
+    {
+        if (request is null)
+            return BadRequest(new { message = "A request body is required." });
+
+        try
+        {
+            var job = await jobs.CreateJobFromUrlAsync(
+                new VideoUrl(request.Url ?? string.Empty),
+                request.Language ?? "auto",
+                request.Model ?? "small",
+                cancellationToken);
+
+            return AcceptedAtAction(nameof(Get), new { id = job.Id }, job);
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or InvalidDataException)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
+
     [HttpPost("{id:guid}/cancel")]
     public async Task<IActionResult> Cancel(Guid id, CancellationToken cancellationToken)
     {

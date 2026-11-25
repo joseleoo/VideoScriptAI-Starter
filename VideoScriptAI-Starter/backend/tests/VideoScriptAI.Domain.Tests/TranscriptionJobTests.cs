@@ -20,6 +20,21 @@ public sealed class TranscriptionJobTests
     }
 
     [Fact]
+    public void Url_job_records_source_and_url()
+    {
+        const string url = "https://example.com/video.mp4";
+        var job = new TranscriptionJob(
+            "video.mp4",
+            "C:\\VideoScriptAI\\uploads\\video.mp4",
+            "auto",
+            TranscriptionModel.Small,
+            url);
+
+        Assert.Equal(VideoSource.Url, job.Source);
+        Assert.Equal(url, job.SourceUrl);
+    }
+
+    [Fact]
     public void SetTranscript_builds_positioned_segments_and_full_text()
     {
         var job = new TranscriptionJob(

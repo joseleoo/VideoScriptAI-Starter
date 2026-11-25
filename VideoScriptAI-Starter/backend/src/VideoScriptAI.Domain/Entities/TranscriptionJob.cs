@@ -8,12 +8,20 @@ public sealed class TranscriptionJob
 
     public TranscriptionJob(string originalFileName, string storedVideoPath, string language,
         TranscriptionModel model)
+        : this(originalFileName, storedVideoPath, language, model, null)
+    {
+    }
+
+    public TranscriptionJob(string originalFileName, string storedVideoPath, string language,
+        TranscriptionModel model, string? sourceUrl)
     {
         Id = Guid.NewGuid();
         OriginalFileName = originalFileName;
         StoredVideoPath = storedVideoPath;
         Language = language;
         Model = model;
+        Source = string.IsNullOrWhiteSpace(sourceUrl) ? VideoSource.Upload : VideoSource.Url;
+        SourceUrl = string.IsNullOrWhiteSpace(sourceUrl) ? null : sourceUrl.Trim();
         Status = TranscriptionStatus.Pending;
         CreatedAtUtc = DateTimeOffset.UtcNow;
     }
@@ -21,6 +29,8 @@ public sealed class TranscriptionJob
     public Guid Id { get; private set; }
     public string OriginalFileName { get; private set; } = string.Empty;
     public string StoredVideoPath { get; private set; } = string.Empty;
+    public VideoSource Source { get; private set; }
+    public string? SourceUrl { get; private set; }
     public string Language { get; private set; } = "auto";
     public TranscriptionModel Model { get; private set; }
     public TranscriptionStatus Status { get; private set; }

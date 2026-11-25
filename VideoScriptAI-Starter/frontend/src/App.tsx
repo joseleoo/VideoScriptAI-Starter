@@ -135,7 +135,7 @@ export default function App() {
             <section className="panel details-panel placeholder">
               <div className="upload-icon">◇</div>
               <h2>Sin trabajo seleccionado</h2>
-              <p>Sube un video o elige un trabajo del historial para ver su progreso.</p>
+              <p>Sube un video, pega una URL o elige un trabajo del historial para ver su progreso.</p>
             </section>
           )}
         </div>

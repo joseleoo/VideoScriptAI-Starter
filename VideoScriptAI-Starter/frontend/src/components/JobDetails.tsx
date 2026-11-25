@@ -30,7 +30,10 @@ export default function JobDetails({ job, onCancel, onTranscriptSaved }: Props) 
         <div>
           <h2 title={job.originalFileName}>{job.originalFileName}</h2>
           <p>
-            Modelo {job.model.toLowerCase()} · idioma {job.detectedLanguage || job.language}
+            {job.source === "Url" ? "URL" : "Archivo local"} · modelo {job.model.toLowerCase()} · idioma {job.detectedLanguage || job.language}
+            {job.sourceUrl && (
+              <> · <a className="source-link" href={job.sourceUrl} target="_blank" rel="noreferrer">Ver fuente</a></>
+            )}
           </p>
         </div>
         <span className={`badge status-${job.status.toLowerCase()}`}>{job.status}</span>

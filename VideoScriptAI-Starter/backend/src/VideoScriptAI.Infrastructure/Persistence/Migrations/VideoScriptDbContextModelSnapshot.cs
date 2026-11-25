@@ -87,6 +87,13 @@ namespace VideoScriptAI.Infrastructure.Persistence.Migrations
                     b.Property<int>("Progress")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("Source")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SourceUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 

@@ -3,6 +3,8 @@ namespace VideoScriptAI.Application.Dtos;
 public sealed record JobDto(
     Guid Id,
     string OriginalFileName,
+    string Source,
+    string? SourceUrl,
     string Language,
     string DetectedLanguage,
     string Model,
@@ -36,3 +38,11 @@ public sealed record JobProgressNotification(
 public sealed record UploadedVideo(
     string FileName,
     Stream Content);
+
+public sealed record VideoUrl(
+    string Url);
+
+public sealed record CreateJobFromUrlRequest(
+    string? Url,
+    string? Language,
+    string? Model);

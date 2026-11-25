@@ -16,6 +16,7 @@ public sealed class VideoScriptDbContext(DbContextOptions<VideoScriptDbContext> 
             entity.HasKey(x => x.Id);
             entity.Property(x => x.OriginalFileName).HasMaxLength(260).IsRequired();
             entity.Property(x => x.StoredVideoPath).IsRequired();
+            entity.Property(x => x.SourceUrl).HasMaxLength(2048);
             entity.Property(x => x.Language).HasMaxLength(16).IsRequired();
             entity.Property(x => x.DetectedLanguage).HasMaxLength(16).IsRequired();
             entity.Property(x => x.FullText).IsRequired();

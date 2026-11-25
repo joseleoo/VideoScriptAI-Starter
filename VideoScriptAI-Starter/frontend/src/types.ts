@@ -9,6 +9,7 @@ export type TranscriptionStatus =
   | "Cancelled";
 
 export type TranscriptionModel = "Base" | "Small" | "Medium";
+export type JobSource = "Upload" | "Url";
 
 export type Health = {
   status: string;
@@ -26,6 +27,8 @@ export type TranscriptSegment = {
 export type Job = {
   id: string;
   originalFileName: string;
+  source: JobSource;
+  sourceUrl: string | null;
   language: string;
   detectedLanguage: string;
   model: TranscriptionModel;
@@ -45,8 +48,6 @@ export type JobProgressNotification = {
   message: string | null;
 };
 
-export type CreateJobInput = {
-  file: File;
-  language: string;
-  model: string;
-};
+export type CreateJobInput =
+  | { kind: "file"; file: File; language: string; model: string }
+  | { kind: "url"; url: string; language: string; model: string };

@@ -33,6 +33,30 @@ public sealed partial class TranscriptionJobService(
         return Map(job);
     }
 
+    public async Task<JobDto> CreateJobFromUrlAsync(
+        VideoUrl videoUrl,
+        string language,
+        string model,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(videoUrl);
+
+        var normalizedLanguage = NormalizeLanguage(language);
+        var parsedModel = ParseModel(model);
+        var storedVideoPath = await fileStorage.SaveUrlAsync(videoUrl, cancellationToken);
+        var job = new TranscriptionJob(
+            GetUrlFileName(videoUrl.Url),
+            storedVideoPath,
+            normalizedLanguage,
+            parsedModel,
+            videoUrl.Url);
+
+        await repository.AddAsync(job, cancellationToken);
+        await queue.EnqueueAsync(job.Id, cancellationToken);
+
+        return Map(job);
+    }
+
     public async Task<JobDto?> GetJobAsync(Guid id, CancellationToken cancellationToken)
     {
         var job = await repository.GetAsync(id, cancellationToken);
@@ -103,6 +127,8 @@ public sealed partial class TranscriptionJobService(
     private static JobDto Map(TranscriptionJob job) => new(
         job.Id,
         job.OriginalFileName,
+        job.Source.ToString(),
+        job.SourceUrl,
         job.Language,
         job.DetectedLanguage,
         job.Model.ToString(),
@@ -116,6 +142,18 @@ public sealed partial class TranscriptionJobService(
             .OrderBy(x => x.Position)
             .Select(x => new TranscriptSegmentDto(x.StartSeconds, x.EndSeconds, x.Text))
             .ToArray());
+
+    private static string GetUrlFileName(string url)
+    {
+        var name = Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            ? Path.GetFileName(Uri.UnescapeDataString(uri.AbsolutePath))
+            : string.Empty;
+
+        if (string.IsNullOrWhiteSpace(name))
+            return "video-from-url";
+
+        return name.Length <= 260 ? name : name[..260];
+    }
 
     private static string NormalizeLanguage(string language)
     {

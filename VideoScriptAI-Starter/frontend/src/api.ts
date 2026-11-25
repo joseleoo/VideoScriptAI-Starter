@@ -12,7 +12,12 @@ const API_BASE_URL = "http://localhost:5000";
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(detail || `API request failed (${response.status})`);
+    let message = detail || `API request failed (${response.status})`;
+    try {
+      const parsed = JSON.parse(detail) as { message?: string };
+      if (parsed.message) message = parsed.message;
+    } catch { }
+    throw new Error(message);
   }
 
   return (await response.json()) as T;
@@ -34,17 +39,35 @@ export async function getJob(id: string): Promise<Job> {
 }
 
 export async function createJob(input: CreateJobInput): Promise<Job> {
+  const response = input.kind === "file"
+    ? await createFromFile(input)
+    : await createFromUrl(input);
+
+  return readJson<Job>(response);
+}
+
+async function createFromFile(input: Extract<CreateJobInput, { kind: "file" }>): Promise<Response> {
   const form = new FormData();
   form.append("file", input.file);
   form.append("language", input.language);
   form.append("model", input.model);
 
-  const response = await fetch(`${API_BASE_URL}/api/jobs`, {
+  return fetch(`${API_BASE_URL}/api/jobs`, {
     method: "POST",
     body: form
   });
+}
 
-  return readJson<Job>(response);
+async function createFromUrl(input: Extract<CreateJobInput, { kind: "url" }>): Promise<Response> {
+  return fetch(`${API_BASE_URL}/api/jobs/from-url`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      url: input.url,
+      language: input.language,
+      model: input.model
+    })
+  });
 }
 
 export async function cancelJob(id: string): Promise<void> {

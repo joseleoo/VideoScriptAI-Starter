@@ -10,6 +10,12 @@ public interface IJobApplicationService
         string model,
         CancellationToken cancellationToken);
 
+    Task<JobDto> CreateJobFromUrlAsync(
+        VideoUrl videoUrl,
+        string language,
+        string model,
+        CancellationToken cancellationToken);
+
     Task<JobDto?> GetJobAsync(Guid id, CancellationToken cancellationToken);
     Task<IReadOnlyList<JobDto>> ListJobsAsync(CancellationToken cancellationToken);
     Task<bool> CancelJobAsync(Guid id, CancellationToken cancellationToken);
