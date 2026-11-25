@@ -59,10 +59,17 @@ var storageOptions = new StorageOptions(Path.GetFullPath(storageRoot), maxUpload
 Directory.CreateDirectory(storageOptions.RootPath);
 Directory.CreateDirectory(storageOptions.UploadsPath);
 Directory.CreateDirectory(storageOptions.AudioPath);
+Directory.CreateDirectory(storageOptions.SpeechPath);
 Directory.CreateDirectory(storageOptions.ExportsPath);
+
+var speechOptions = new TextToSpeechOptions(
+    Environment.GetEnvironmentVariable("VIDEOSCRIPTAI_PYTHON_PATH")
+    ?? builder.Configuration["TextToSpeech:PythonPath"]
+    ?? "python");
 
 builder.Services.AddSingleton(engineOptions);
 builder.Services.AddSingleton(storageOptions);
+builder.Services.AddSingleton(speechOptions);
 builder.Services.AddDbContext<VideoScriptDbContext>(options =>
     options.UseSqlite($"Data Source={storageOptions.DatabasePath}"));
 
@@ -74,6 +81,7 @@ builder.Services.AddSingleton<IExportService, ExportService>();
 builder.Services.AddSingleton<IProcessRunner, ProcessRunner>();
 builder.Services.AddSingleton<IAudioExtractor, FfmpegAudioExtractor>();
 builder.Services.AddSingleton<ITranscriptionEngine, WhisperCliTranscriptionEngine>();
+builder.Services.AddSingleton<ITextToSpeechService, TextToSpeechService>();
 builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<IJobApplicationService, TranscriptionJobService>();
 builder.Services.AddHostedService<TranscriptionWorker>();

@@ -4,21 +4,27 @@ import type {
   Health,
   Job,
   JobProgressNotification,
-  TranscriptSegment
+  SynthesizeSpeechInput,
+  TranscriptSegment,
+  TtsVoice
 } from "./types";
 
 const API_BASE_URL = "http://localhost:5000";
 
+async function readErrorMessage(response: Response): Promise<string> {
+  const detail = await response.text();
+  let message = detail || `API request failed (${response.status})`;
+  try {
+    const parsed = JSON.parse(detail) as { message?: string };
+    if (parsed.message) message = parsed.message;
+  } catch { }
+
+  return message;
+}
+
 async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const detail = await response.text();
-    let message = detail || `API request failed (${response.status})`;
-    try {
-      const parsed = JSON.parse(detail) as { message?: string };
-      if (parsed.message) message = parsed.message;
-    } catch { }
-    throw new Error(message);
-  }
+  if (!response.ok)
+    throw new Error(await readErrorMessage(response));
 
   return (await response.json()) as T;
 }
@@ -107,6 +113,30 @@ export async function downloadExport(id: string, format: string): Promise<void> 
   anchor.download = fileName;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+export async function listTtsVoices(): Promise<TtsVoice[]> {
+  const response = await fetch(`${API_BASE_URL}/api/tts/voices`);
+  return readJson<TtsVoice[]>(response);
+}
+
+export async function synthesizeSpeech(input: SynthesizeSpeechInput): Promise<{ blob: Blob; fileName: string }> {
+  const response = await fetch(`${API_BASE_URL}/api/tts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+
+  if (!response.ok)
+    throw new Error(await readErrorMessage(response));
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition");
+  const match = disposition?.match(/filename="?([^";]+)"?/i);
+  return {
+    blob,
+    fileName: match?.[1] ?? "speech.mp3"
+  };
 }
 
 export async function subscribeToJobProgress(

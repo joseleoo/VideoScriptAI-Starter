@@ -51,3 +51,19 @@ export type JobProgressNotification = {
 export type CreateJobInput =
   | { kind: "file"; file: File; language: string; model: string }
   | { kind: "url"; url: string; language: string; model: string };
+
+export type TtsProvider = "Windows" | "Edge";
+
+export type TtsVoice = {
+  provider: TtsProvider;
+  id: string;
+  name: string;
+  locale: string;
+  gender: string;
+};
+
+export type SynthesizeSpeechInput = {
+  text: string;
+  provider: TtsProvider;
+  voiceId: string;
+};

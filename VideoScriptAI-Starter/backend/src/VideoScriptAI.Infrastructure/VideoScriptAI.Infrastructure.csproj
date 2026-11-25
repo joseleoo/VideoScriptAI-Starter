@@ -3,7 +3,13 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>VideoScriptAI.Infrastructure.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.15" />
+    <PackageReference Include="System.Speech" Version="11.0.0" />
     <ProjectReference Include="..\VideoScriptAI.Domain\VideoScriptAI.Domain.csproj" />
     <ProjectReference Include="..\VideoScriptAI.Application\VideoScriptAI.Application.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.15" />
