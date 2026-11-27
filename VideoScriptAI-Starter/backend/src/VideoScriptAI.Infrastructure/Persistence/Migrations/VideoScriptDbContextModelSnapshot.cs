@@ -17,6 +17,102 @@ namespace VideoScriptAI.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
+            modelBuilder.Entity("VideoScriptAI.Domain.Entities.MeetingNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AudioPath")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DetectedLanguage")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FullText")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SummaryProvider")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAtUtc");
+
+                    b.ToTable("Meetings");
+                });
+
+            modelBuilder.Entity("VideoScriptAI.Domain.Entities.MeetingSegment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("EndSeconds")
+                        .HasColumnType("REAL");
+
+                    b.Property<Guid>("MeetingId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Speaker")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("StartSeconds")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MeetingId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("MeetingSegments");
+                });
+
             modelBuilder.Entity("VideoScriptAI.Domain.Entities.TranscriptSegment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -108,6 +204,15 @@ namespace VideoScriptAI.Infrastructure.Persistence.Migrations
                     b.ToTable("Jobs");
                 });
 
+            modelBuilder.Entity("VideoScriptAI.Domain.Entities.MeetingSegment", b =>
+                {
+                    b.HasOne("VideoScriptAI.Domain.Entities.MeetingNote", null)
+                        .WithMany("Segments")
+                        .HasForeignKey("MeetingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("VideoScriptAI.Domain.Entities.TranscriptSegment", b =>
                 {
                     b.HasOne("VideoScriptAI.Domain.Entities.TranscriptionJob", null)
@@ -115,6 +220,11 @@ namespace VideoScriptAI.Infrastructure.Persistence.Migrations
                         .HasForeignKey("JobId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("VideoScriptAI.Domain.Entities.MeetingNote", b =>
+                {
+                    b.Navigation("Segments");
                 });
 
             modelBuilder.Entity("VideoScriptAI.Domain.Entities.TranscriptionJob", b =>

@@ -4,7 +4,13 @@ import type {
   Health,
   Job,
   JobProgressNotification,
+  Meeting,
+  MeetingProgressNotification,
+  MeetingSegment,
+  RecordingStatus,
   SynthesizeSpeechInput,
+  SummaryProvider,
+  SummaryProviderInfo,
   TranscriptSegment,
   TtsVoice
 } from "./types";
@@ -148,6 +154,144 @@ export async function subscribeToJobProgress(
     .build();
 
   connection.on("jobProgress", onProgress);
+  await connection.start();
+  return connection;
+}
+
+export async function listMeetings(): Promise<Meeting[]> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings`);
+  return readJson<Meeting[]>(response);
+}
+
+export async function getMeeting(id: string): Promise<Meeting> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/${id}`);
+  return readJson<Meeting>(response);
+}
+
+export async function listSummaryProviders(): Promise<SummaryProviderInfo[]> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/providers`);
+  return readJson<SummaryProviderInfo[]>(response);
+}
+
+export async function getRecordingStatus(): Promise<RecordingStatus> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/recording`);
+  return readJson<RecordingStatus>(response);
+}
+
+export async function createMeetingFromUpload(
+  file: File,
+  title: string,
+  language: string,
+  summaryProvider: SummaryProvider
+): Promise<Meeting> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("title", title);
+  form.append("language", language);
+  form.append("summaryProvider", summaryProvider);
+
+  const response = await fetch(`${API_BASE_URL}/api/meetings`, {
+    method: "POST",
+    body: form
+  });
+  return readJson<Meeting>(response);
+}
+
+export async function startMeetingRecording(
+  title: string,
+  language: string,
+  summaryProvider: SummaryProvider
+): Promise<Meeting> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/record/start`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, language, summaryProvider })
+  });
+  return readJson<Meeting>(response);
+}
+
+export async function stopMeetingRecording(): Promise<Meeting> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/record/stop`, {
+    method: "POST"
+  });
+  return readJson<Meeting>(response);
+}
+
+export async function cancelMeeting(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/${id}/cancel`, {
+    method: "POST"
+  });
+  if (!response.ok)
+    throw new Error(await readErrorMessage(response));
+}
+
+export async function deleteMeeting(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/${id}`, {
+    method: "DELETE"
+  });
+  if (!response.ok)
+    throw new Error(await readErrorMessage(response));
+}
+
+export async function updateMeetingSegments(
+  id: string,
+  segments: MeetingSegment[]
+): Promise<Meeting> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/${id}/segments`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ segments })
+  });
+  return readJson<Meeting>(response);
+}
+
+export async function updateMeetingSummary(id: string, summary: string): Promise<Meeting> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/${id}/summary`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ summary })
+  });
+  return readJson<Meeting>(response);
+}
+
+export async function regenerateMeetingSummary(
+  id: string,
+  summaryProvider?: SummaryProvider
+): Promise<Meeting> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/${id}/summary/regenerate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ summaryProvider: summaryProvider ?? null })
+  });
+  return readJson<Meeting>(response);
+}
+
+export async function downloadMeetingExport(id: string, format: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/${id}/export/${format}`);
+  if (!response.ok)
+    throw new Error(await readErrorMessage(response));
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition");
+  const match = disposition?.match(/filename="?([^";]+)"?/i);
+  const fileName = match?.[1] ?? `meeting-notes-${id}.${format}`;
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function subscribeToMeetingProgress(
+  onProgress: (notification: MeetingProgressNotification) => void
+): Promise<SignalR.HubConnection> {
+  const connection = new SignalR.HubConnectionBuilder()
+    .withUrl(`${API_BASE_URL}/hubs/jobs`)
+    .withAutomaticReconnect()
+    .build();
+
+  connection.on("meetingProgress", onProgress);
   await connection.start();
   return connection;
 }

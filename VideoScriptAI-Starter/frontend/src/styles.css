@@ -92,6 +92,12 @@ button.secondary {
 }
 .info-note { background: #152b3c; color: #a9d7ff; border-color: #2a5878; }
 .global-error { margin-bottom: 18px; }
+.error-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.error-actions button { flex-shrink: 0; }
+button.danger {
+  border: 1px solid #74334c; border-radius: 10px; padding: 9px 13px;
+  background: #3a1d2b; color: #ffb4c4; font-size: 13px;
+}
 .empty-note { margin-top: 20px; color: #8995aa; font-size: 14px; }
 .job-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
 .job-row {
@@ -139,9 +145,44 @@ textarea { resize: vertical; line-height: 1.5; }
   display: inline-block; border-radius: 10px; padding: 9px 14px;
   background: #1a2340; color: #d9def0; text-decoration: none; font-size: 13px;
 }
+.text-input {
+  width: 100%; border: 1px solid #303b57; border-radius: 10px;
+  background: #0d1426; color: #eef1f7; padding: 10px 12px;
+}
+.text-input:focus { outline: 2px solid #8b9cfb88; border-color: #8b9cfb; }
+.meeting-capture { margin-top: 22px; }
+.meeting-capture .info-note { margin-top: 14px; }
+.meeting-dropzone { min-height: 130px; margin-top: 0; }
+.meeting-dropzone .upload-icon { width: 38px; height: 38px; font-size: 22px; }
+.recording-badge {
+  display: inline-flex; align-items: center; gap: 8px; border: 1px solid #74334c;
+  border-radius: 999px; padding: 6px 12px; background: #3a1d2b; color: #ffb4c4;
+  font-size: 12px; font-variant-numeric: tabular-nums;
+}
+.recording-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #ff6b8b;
+  animation: recording-pulse 1.2s ease-in-out infinite;
+}
+@keyframes recording-pulse { 50% { opacity: .3; } }
+.summary-section { margin-top: 26px; border-top: 1px solid #273149; padding-top: 22px; }
+.summary-section > button { margin-top: 12px; }
+.summary-actions { display: flex; align-items: center; gap: 8px; }
+.summary-actions select { width: auto; min-width: 180px; }
+.editor-hint { margin: -6px 0 14px !important; font-size: 12px !important; }
+.meeting-segment { margin-bottom: 14px; }
+.meeting-segment-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.meeting-segment-meta .timestamp { padding-top: 0; }
+.speaker-input {
+  flex: 1; max-width: 240px; border: 1px solid #303b57; border-radius: 8px;
+  background: #0d1426; color: #eef1f7; padding: 7px 10px; font-size: 13px;
+}
+.speaker-input:focus { outline: 2px solid #8b9cfb88; border-color: #8b9cfb; }
+.status-recording { background: #4a1f2f; color: #ff9db2; }
+.status-summarizing { background: #3d3363; color: #c3b5ff; }
 @media (max-width: 900px) {
   .tts-fields { grid-template-columns: 1fr; }
   .tts-actions { flex-direction: column; align-items: flex-start; }
+  .summary-actions { flex-wrap: wrap; }
   .layout { grid-template-columns: 1fr; }
   .shell { padding: 28px 0; }
 }

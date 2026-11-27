@@ -6,5 +6,6 @@ public sealed record StorageOptions(string RootPath, long MaxUploadBytes)
     public string AudioPath => Path.Combine(RootPath, "audio");
     public string SpeechPath => Path.Combine(RootPath, "speech");
     public string ExportsPath => Path.Combine(RootPath, "exports");
+    public string MeetingsPath => Path.Combine(RootPath, "meetings");
     public string DatabasePath => Path.Combine(RootPath, "videoscriptai.db");
 }

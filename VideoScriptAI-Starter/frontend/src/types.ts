@@ -15,6 +15,7 @@ export type Health = {
   status: string;
   application: string;
   enginesReady: boolean;
+  recordingAvailable: boolean;
   timestampUtc: string;
 };
 
@@ -66,4 +67,63 @@ export type SynthesizeSpeechInput = {
   text: string;
   provider: TtsProvider;
   voiceId: string;
+};
+
+export type MeetingStatus =
+  | "Pending"
+  | "Recording"
+  | "Validating"
+  | "Transcribing"
+  | "Summarizing"
+  | "Completed"
+  | "Failed"
+  | "Cancelled";
+
+export type MeetingSource = "Upload" | "Live";
+export type SummaryProvider = "Ollama" | "OpenAI" | "Extractive";
+
+export type MeetingSegment = {
+  position: number;
+  startSeconds: number;
+  endSeconds: number;
+  text: string;
+  speaker: string;
+};
+
+export type Meeting = {
+  id: string;
+  title: string;
+  source: MeetingSource;
+  language: string;
+  detectedLanguage: string;
+  summaryProvider: SummaryProvider;
+  status: MeetingStatus;
+  progress: number;
+  errorMessage: string | null;
+  createdAtUtc: string;
+  completedAtUtc: string | null;
+  fullText: string;
+  summary: string;
+  segments: MeetingSegment[];
+};
+
+export type MeetingProgressNotification = {
+  meetingId: string;
+  status: MeetingStatus;
+  progress: number;
+  message: string | null;
+};
+
+export type RecordingStatus = {
+  isRecording: boolean;
+  meetingId: string | null;
+  startedAtUtc: string | null;
+  bytesWritten: number;
+};
+
+export type SummaryProviderInfo = {
+  provider: SummaryProvider;
+  label: string;
+  available: boolean;
+  isDefault: boolean;
 };

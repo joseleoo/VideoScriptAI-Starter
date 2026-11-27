@@ -67,9 +67,26 @@ var speechOptions = new TextToSpeechOptions(
     ?? builder.Configuration["TextToSpeech:PythonPath"]
     ?? "python");
 
+var summaryOptions = builder.Configuration.GetSection("Summary").Get<SummaryOptions>() ?? new SummaryOptions();
+summaryOptions.DefaultProvider =
+    Environment.GetEnvironmentVariable("VIDEOSCRIPTAI_SUMMARY_PROVIDER") ?? summaryOptions.DefaultProvider;
+summaryOptions.OllamaBaseUrl =
+    Environment.GetEnvironmentVariable("VIDEOSCRIPTAI_OLLAMA_URL") ?? summaryOptions.OllamaBaseUrl;
+summaryOptions.OllamaModel =
+    Environment.GetEnvironmentVariable("VIDEOSCRIPTAI_OLLAMA_MODEL") ?? summaryOptions.OllamaModel;
+summaryOptions.OpenAiBaseUrl =
+    Environment.GetEnvironmentVariable("VIDEOSCRIPTAI_OPENAI_BASE_URL") ?? summaryOptions.OpenAiBaseUrl;
+summaryOptions.OpenAiModel =
+    Environment.GetEnvironmentVariable("VIDEOSCRIPTAI_OPENAI_MODEL") ?? summaryOptions.OpenAiModel;
+summaryOptions.OpenAiApiKey =
+    Environment.GetEnvironmentVariable("VIDEOSCRIPTAI_OPENAI_API_KEY") ?? summaryOptions.OpenAiApiKey;
+
+Directory.CreateDirectory(storageOptions.MeetingsPath);
+
 builder.Services.AddSingleton(engineOptions);
 builder.Services.AddSingleton(storageOptions);
 builder.Services.AddSingleton(speechOptions);
+builder.Services.AddSingleton(summaryOptions);
 builder.Services.AddDbContext<VideoScriptDbContext>(options =>
     options.UseSqlite($"Data Source={storageOptions.DatabasePath}"));
 
@@ -82,9 +99,27 @@ builder.Services.AddSingleton<IProcessRunner, ProcessRunner>();
 builder.Services.AddSingleton<IAudioExtractor, FfmpegAudioExtractor>();
 builder.Services.AddSingleton<ITranscriptionEngine, WhisperCliTranscriptionEngine>();
 builder.Services.AddSingleton<ITextToSpeechService, TextToSpeechService>();
+builder.Services.AddSingleton<IMeetingQueue, MeetingQueue>();
+builder.Services.AddSingleton<IMeetingCancellationRegistry, MeetingCancellationRegistry>();
+builder.Services.AddSingleton<IMeetingProgressNotifier, SignalRMeetingProgressNotifier>();
+builder.Services.AddSingleton<IMeetingFileStorage, MeetingFileStorage>();
+builder.Services.AddSingleton<IMeetingExportService, MeetingExportService>();
+builder.Services.AddSingleton<ISummaryProvider, OllamaSummaryProvider>();
+builder.Services.AddSingleton<ISummaryProvider, OpenAiSummaryProvider>();
+builder.Services.AddSingleton<ISummaryProvider, ExtractiveSummaryProvider>();
+builder.Services.AddSingleton<ISummaryService, SummaryService>();
+
+if (OperatingSystem.IsWindows())
+    builder.Services.AddSingleton<IAudioRecorder, WasapiAudioRecorder>();
+else
+    builder.Services.AddSingleton<IAudioRecorder, UnsupportedAudioRecorder>();
+
 builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<IJobApplicationService, TranscriptionJobService>();
+builder.Services.AddScoped<IMeetingRepository, MeetingRepository>();
+builder.Services.AddScoped<IMeetingApplicationService, MeetingService>();
 builder.Services.AddHostedService<TranscriptionWorker>();
+builder.Services.AddHostedService<MeetingWorker>();
 
 var app = builder.Build();
 
@@ -110,6 +145,7 @@ app.MapGet("/api/health", () => Results.Ok(new
     enginesReady = File.Exists(engineOptions.FfmpegPath)
         && File.Exists(engineOptions.WhisperPath)
         && File.Exists(engineOptions.GetModelPath(TranscriptionModel.Small)),
+    recordingAvailable = OperatingSystem.IsWindows(),
     timestampUtc = DateTimeOffset.UtcNow
 }));
 

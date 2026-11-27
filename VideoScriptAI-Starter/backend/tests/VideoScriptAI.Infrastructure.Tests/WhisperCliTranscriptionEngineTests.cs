@@ -43,7 +43,7 @@ public sealed class WhisperCliTranscriptionEngineTests
 
             var result = await engine.TranscribeAsync(
                 new TranscriptionRequest(audioPath, modelPath, "en"),
-                new Progress<int>(progress.Add),
+                new SynchronousProgress<int>(progress.Add),
                 CancellationToken.None);
 
             Assert.Equal(whisperPath, runner.ExecutablePath);
@@ -173,6 +173,11 @@ public sealed class WhisperCliTranscriptionEngineTests
         var path = Path.Combine(root, name);
         await File.WriteAllTextAsync(path, "stub");
         return path;
+    }
+
+    private sealed class SynchronousProgress<T>(Action<T> onReport) : IProgress<T>
+    {
+        public void Report(T value) => onReport(value);
     }
 
     private sealed class FakeProcessRunner : IProcessRunner
