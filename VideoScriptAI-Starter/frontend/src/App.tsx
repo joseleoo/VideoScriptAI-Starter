@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import type { HubConnection } from "@microsoft/signalr";
-import { cancelJob, getHealth, getJob, listJobs, subscribeToJobProgress } from "./api";
+import {
+  cancelJob,
+  getHealth,
+  getJob,
+  getRecordingStatus,
+  listJobs,
+  listMeetings,
+  listSummaryProviders,
+  listTtsVoices,
+  subscribeToJobProgress
+} from "./api";
 import JobDetails from "./components/JobDetails";
 import JobList from "./components/JobList";
 import MeetingNotesPanel from "./components/MeetingNotesPanel";
@@ -9,6 +19,19 @@ import UploadPanel from "./components/UploadPanel";
 import type { Health, Job } from "./types";
 
 type AppMode = "video" | "speech" | "meetings";
+type BootState = "pending" | "ready" | "failed";
+
+const bootSteps = [
+  { key: "api", label: "ASP.NET Core / API" },
+  { key: "engines", label: "Motores locales (ffmpeg + whisper)" },
+  { key: "signalr", label: "SignalR" },
+  { key: "jobs", label: "Historial de trabajos" },
+  { key: "meetings", label: "Notas de reunión" },
+  { key: "speech", label: "Voces TTS" }
+] as const;
+
+type BootKey = typeof bootSteps[number]["key"];
+type BootCheck = { key: BootKey; label: string; state: BootState };
 
 export default function App() {
   const [mode, setMode] = useState<AppMode>("video");
@@ -19,6 +42,14 @@ export default function App() {
   const [healthError, setHealthError] = useState<string | null>(null);
   const [signalrError, setSignalrError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [booting, setBooting] = useState(true);
+  const [bootChecks, setBootChecks] = useState<BootCheck[]>(() =>
+    bootSteps.map((step) => ({ ...step, state: "pending" })));
+
+  const markBoot = useCallback((key: BootKey, state: Exclude<BootState, "pending">) => {
+    setBootChecks((current) => current.map((check) =>
+      check.key === key ? { ...check, state } : check));
+  }, []);
 
   const replaceJob = useCallback((job: Job) => {
     setJobs((current) =>
@@ -31,12 +62,14 @@ export default function App() {
     try {
       setJobs(await listJobs());
       setHealthError(null);
+      markBoot("jobs", "ready");
     } catch (exception) {
       setHealthError(exception instanceof Error ? exception.message : "No se pudo cargar el historial.");
+      markBoot("jobs", "failed");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [markBoot]);
 
   useEffect(() => {
     let active = true;
@@ -53,9 +86,15 @@ export default function App() {
         if (active) {
           setHealth(result);
           setHealthError(null);
+          markBoot("api", "ready");
+          markBoot("engines", result.enginesReady ? "ready" : "failed");
         }
       } catch {
-        if (active) setHealthError("No se pudo conectar con ASP.NET Core.");
+        if (active) {
+          setHealthError("No se pudo conectar con ASP.NET Core.");
+          markBoot("api", "failed");
+          markBoot("engines", "failed");
+        }
       }
     };
 
@@ -78,11 +117,16 @@ export default function App() {
       }
     })
       .then((result) => {
-        if (active) connection = result;
-        else void result.stop();
+        if (active) {
+          connection = result;
+          markBoot("signalr", "ready");
+        } else void result.stop();
       })
       .catch(() => {
-        if (active) setSignalrError("SignalR no disponible; usando actualización periódica.");
+        if (active) {
+          setSignalrError("SignalR no disponible; usando actualización periódica.");
+          markBoot("signalr", "failed");
+        }
       });
 
     return () => {
@@ -91,7 +135,49 @@ export default function App() {
       window.clearInterval(healthInterval);
       if (connection) void connection.stop();
     };
-  }, [refresh, replaceJob]);
+  }, [markBoot, refresh, replaceJob]);
+
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      try {
+        await Promise.all([listMeetings(), listSummaryProviders(), getRecordingStatus()]);
+        if (active) markBoot("meetings", "ready");
+      } catch {
+        if (active) markBoot("meetings", "failed");
+      }
+    })();
+
+    void (async () => {
+      try {
+        await listTtsVoices();
+        if (active) markBoot("speech", "ready");
+      } catch {
+        if (active) markBoot("speech", "failed");
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [markBoot]);
+
+  useEffect(() => {
+    if (!booting || !bootChecks.every((check) => check.state !== "pending")) return;
+    const timer = window.setTimeout(() => setBooting(false), 350);
+    return () => window.clearTimeout(timer);
+  }, [bootChecks, booting]);
+
+  useEffect(() => {
+    if (!booting) return;
+    const timer = window.setTimeout(() => {
+      setBootChecks((current) => current.map((check) =>
+        check.state === "pending" ? { ...check, state: "failed" } : check));
+      setBooting(false);
+    }, 15000);
+    return () => window.clearTimeout(timer);
+  }, [booting]);
 
   function handleCreated(job: Job) {
     setJobs((current) => [job, ...current]);
@@ -118,7 +204,31 @@ export default function App() {
   const notice = error ?? healthError ?? signalrError;
 
   return (
-    <main className="shell">
+    <>
+      {booting && (
+        <div className="boot-overlay" role="status" aria-live="polite" aria-busy="true">
+          <div className="boot-card">
+            <span className="boot-spinner" aria-hidden="true" />
+            <h2>Cargando dependencias</h2>
+            <p>Preparando backend, SignalR y motores locales...</p>
+            <ul className="boot-list">
+              {bootChecks.map((check) => (
+                <li key={check.key} className={`boot-item ${check.state}`}>
+                  <span className="boot-mark" aria-hidden="true">
+                    {check.state === "ready" ? "✓" : check.state === "failed" ? "!" : ""}
+                  </span>
+                  <span>{check.label}</span>
+                  <span className="boot-state">
+                    {check.state === "ready" ? "Listo" : check.state === "failed" ? "Error" : "Cargando"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      <main className="shell" aria-hidden={booting}>
       <header className="hero">
         <div className="eyebrow">LOCAL AI · VIDEO TRANSCRIPTION &amp; TTS</div>
         <h1>VideoScript <span>AI</span></h1>
@@ -213,6 +323,7 @@ export default function App() {
             ? "Windows: local · Edge TTS: envía el texto a Microsoft"
             : "Transcripción local · El resumen puede usar Ollama, OpenAI o un modo extractivo"}
       </div>
-    </main>
+      </main>
+    </>
   );
 }

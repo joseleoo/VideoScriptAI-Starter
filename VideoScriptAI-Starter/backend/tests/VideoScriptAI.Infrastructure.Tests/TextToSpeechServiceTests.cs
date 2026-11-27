@@ -66,6 +66,28 @@ public class TextToSpeechServiceTests
     }
 
     [Fact]
+    public async Task SynthesizeAsync_BuildsFriendlyFileNameFromText()
+    {
+        var service = new TextToSpeechService(
+            new StorageOptions(Path.Combine(Path.GetTempPath(), "videoscriptai-tts-tests"), 1024),
+            new EngineOptions
+            {
+                FfmpegPath = "ffmpeg.exe",
+                WhisperPath = "whisper.exe",
+                ModelsPath = Path.GetTempPath()
+            },
+            new TextToSpeechOptions("python"),
+            new EdgeStubProcessRunner());
+
+        var result = await service.SynthesizeAsync(
+            new SynthesizeSpeechRequest("Hola mundo, ¿cómo estás?\nNecesito audio.", "Edge", "en-US-AriaNeural"),
+            CancellationToken.None);
+
+        Assert.StartsWith("hola_mundo_como_", result.FileName);
+        Assert.EndsWith(".mp3", result.FileName);
+    }
+
+    [Fact]
     public void ParseEdgeVoiceList_ReadsVoicesAndLocales()
     {
         const string output = """

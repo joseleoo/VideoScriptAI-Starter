@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Speech.Synthesis;
@@ -62,7 +63,7 @@ public sealed class TextToSpeechService(
         }
 
         Directory.CreateDirectory(storage.SpeechPath);
-        var fileName = $"speech_{Guid.NewGuid():N}.mp3";
+        var fileName = BuildFileName(text);
         var outputPath = Path.GetFullPath(Path.Combine(storage.SpeechPath, fileName));
         var directoryPrefix = storage.SpeechPath.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         if (!outputPath.StartsWith(directoryPrefix, StringComparison.OrdinalIgnoreCase))
@@ -243,6 +244,32 @@ public sealed class TextToSpeechService(
     {
         var parts = voiceId.Split('-');
         return parts.Length >= 2 ? $"{parts[0]}-{parts[1]}" : string.Empty;
+    }
+
+    private static string BuildFileName(string text)
+    {
+        var normalized = text.Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder();
+        foreach (var character in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) == UnicodeCategory.NonSpacingMark)
+                continue;
+
+            builder.Append(char.IsLetterOrDigit(character) || character is ' ' or '-' or '_'
+                ? character
+                : ' ');
+        }
+
+        var words = builder.ToString()
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+            .Take(6);
+        var slug = string.Join('_', words).ToLowerInvariant();
+        if (slug.Length > 60)
+            slug = slug[..60].TrimEnd('_');
+        if (string.IsNullOrWhiteSpace(slug))
+            slug = "audio";
+
+        return $"{slug}_{Guid.NewGuid().ToString("N")[..6]}.mp3";
     }
 
     private static string Describe(ProcessExecutionResult result)
