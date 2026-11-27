@@ -90,6 +90,9 @@ public sealed class MeetingWorker(
 
             var progress = new Progress<int>(value =>
             {
+                if (linked.IsCancellationRequested || meeting.Status is MeetingStatus.Cancelled or MeetingStatus.Failed)
+                    return;
+
                 var scaled = Math.Clamp(45 + value * 40 / 100, 45, 85);
                 meeting.UpdateProgress(MeetingStatus.Transcribing, scaled);
                 _ = notifier.PublishAsync(
@@ -135,6 +138,9 @@ public sealed class MeetingWorker(
         }
         catch (OperationCanceledException)
         {
+            if (meeting.Status == MeetingStatus.Cancelled)
+                return;
+
             meeting.Cancel();
             await repository.SaveChangesAsync(CancellationToken.None);
             await notifier.PublishAsync(

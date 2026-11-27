@@ -55,6 +55,8 @@ public sealed class WhisperCliTranscriptionEngineTests
             Assert.Equal("en", runner.Arguments[Array.IndexOf(runner.Arguments.ToArray(), "-l") + 1]);
             Assert.Contains("-t", runner.Arguments);
             Assert.Equal("6", runner.Arguments[Array.IndexOf(runner.Arguments.ToArray(), "-t") + 1]);
+            Assert.Contains("-pp", runner.Arguments);
+            Assert.DoesNotContain("-np", runner.Arguments);
             Assert.Contains("-oj", runner.Arguments);
             Assert.Contains("-of", runner.Arguments);
             Assert.Equal(new[] { 5, 90, 100 }, progress);
@@ -64,6 +66,43 @@ public sealed class WhisperCliTranscriptionEngineTests
             Assert.Equal(0, result.Segments[0].StartSeconds);
             Assert.Equal(1.5, result.Segments[0].EndSeconds);
             Assert.Equal(3.25, result.Segments[1].EndSeconds);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task TranscribeAsync_reports_whisper_progress_lines()
+    {
+        var root = NewTempRoot();
+        var audioPath = await WriteStubFileAsync(root, "audio.wav");
+        var modelPath = await WriteStubFileAsync(root, "ggml-small.bin");
+        var whisperPath = await WriteStubFileAsync(root, "whisper-cli.exe");
+
+        try
+        {
+            var runner = new FakeProcessRunner
+            {
+                Json = SampleJson,
+                OutputLines =
+                [
+                    "whisper_print_progress_callback: progress = 20%",
+                    "whisper_print_progress_callback: progress = 60%"
+                ]
+            };
+            var engine = new WhisperCliTranscriptionEngine(
+                runner,
+                new EngineOptions { WhisperPath = whisperPath, WhisperThreads = 6 });
+            var progress = new List<int>();
+
+            await engine.TranscribeAsync(
+                new TranscriptionRequest(audioPath, modelPath, "en"),
+                new SynchronousProgress<int>(progress.Add),
+                CancellationToken.None);
+
+            Assert.Equal(new[] { 5, 22, 56, 90, 100 }, progress);
         }
         finally
         {
@@ -186,11 +225,13 @@ public sealed class WhisperCliTranscriptionEngineTests
         public IReadOnlyList<string> Arguments { get; private set; } = Array.Empty<string>();
         public ProcessExecutionResult Result { get; set; } = new(0, string.Empty, string.Empty);
         public string Json { get; set; } = SampleJson;
+        public string[] OutputLines { get; set; } = [];
 
         public Task<ProcessExecutionResult> RunAsync(
             string executablePath,
             IReadOnlyList<string> arguments,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            IProgress<string>? output = null)
         {
             ExecutablePath = executablePath;
             Arguments = arguments;
@@ -200,6 +241,9 @@ public sealed class WhisperCliTranscriptionEngineTests
                 var jsonPath = arguments[outputIndex + 1] + ".json";
                 File.WriteAllText(jsonPath, Json);
             }
+
+            foreach (var line in OutputLines)
+                output?.Report(line);
 
             return Task.FromResult(Result);
         }

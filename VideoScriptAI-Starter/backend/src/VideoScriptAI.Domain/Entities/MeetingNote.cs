@@ -110,6 +110,7 @@ public sealed class MeetingNote
     public void Cancel()
     {
         Status = MeetingStatus.Cancelled;
+        Progress = 0;
         CompletedAtUtc ??= DateTimeOffset.UtcNow;
     }
 

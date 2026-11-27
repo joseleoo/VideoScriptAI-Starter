@@ -25,6 +25,8 @@ type Props = {
   recordingAvailable: boolean;
 };
 
+const terminalStatuses = new Set(["Completed", "Failed", "Cancelled"]);
+
 const languages = [
   { value: "auto", label: "Detectar idioma" },
   { value: "es", label: "Español" },
@@ -106,15 +108,19 @@ export default function MeetingNotesPanel({ recordingAvailable }: Props) {
     }, 3000);
 
     subscribeToMeetingProgress(notification => {
-      setMeetings(current => current.map(meeting =>
-        meeting.id === notification.meetingId
-          ? {
-            ...meeting,
-            status: notification.status,
-            progress: notification.progress,
-            errorMessage: notification.status === "Failed" ? notification.message : meeting.errorMessage
-          }
-          : meeting));
+      setMeetings(current => current.map(meeting => {
+        if (meeting.id !== notification.meetingId)
+          return meeting;
+        if (terminalStatuses.has(meeting.status) && !terminalStatuses.has(notification.status))
+          return meeting;
+
+        return {
+          ...meeting,
+          status: notification.status,
+          progress: notification.progress,
+          errorMessage: notification.status === "Failed" ? notification.message : meeting.errorMessage
+        };
+      }));
 
       if (notification.status === "Completed" || notification.status === "Failed" || notification.status === "Cancelled")
         void getMeeting(notification.meetingId).then(replaceMeeting).catch(() => undefined);

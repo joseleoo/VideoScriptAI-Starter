@@ -148,7 +148,8 @@ public sealed class FfmpegAudioExtractorTests
         public Task<ProcessExecutionResult> RunAsync(
             string executablePath,
             IReadOnlyList<string> arguments,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            IProgress<string>? output = null)
         {
             ExecutablePath = executablePath;
             Arguments = arguments;

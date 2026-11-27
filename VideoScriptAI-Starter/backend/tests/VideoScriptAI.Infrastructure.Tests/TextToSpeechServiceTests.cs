@@ -123,7 +123,8 @@ public class TextToSpeechServiceTests
         public Task<ProcessExecutionResult> RunAsync(
             string executablePath,
             IReadOnlyList<string> arguments,
-            CancellationToken cancellationToken) =>
+            CancellationToken cancellationToken,
+            IProgress<string>? output = null) =>
             Task.FromResult(new ProcessExecutionResult(0, string.Empty, string.Empty));
     }
 
@@ -135,7 +136,8 @@ public class TextToSpeechServiceTests
         public Task<ProcessExecutionResult> RunAsync(
             string executablePath,
             IReadOnlyList<string> arguments,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            IProgress<string>? output = null)
         {
             if (arguments.Contains("--list-voices"))
                 return Task.FromResult(new ProcessExecutionResult(0, "en-US-AriaNeural Female News\n", string.Empty));

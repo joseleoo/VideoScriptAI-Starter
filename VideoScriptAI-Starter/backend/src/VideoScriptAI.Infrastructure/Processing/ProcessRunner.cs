@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text;
 using VideoScriptAI.Application.Abstractions;
 
 namespace VideoScriptAI.Infrastructure.Processing;
@@ -9,7 +10,8 @@ public sealed class ProcessRunner : IProcessRunner
     public async Task<ProcessExecutionResult> RunAsync(
         string executablePath,
         IReadOnlyList<string> arguments,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IProgress<string>? output = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
         ArgumentNullException.ThrowIfNull(arguments);
@@ -35,8 +37,8 @@ public sealed class ProcessRunner : IProcessRunner
         if (!process.Start())
             throw new InvalidOperationException("Failed to start process: " + executablePath);
 
-        var standardOutputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var standardErrorTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        var standardOutputTask = ReadAndReportAsync(process.StandardOutput, output, cancellationToken);
+        var standardErrorTask = ReadAndReportAsync(process.StandardError, output, cancellationToken);
 
         using var registration = cancellationToken.Register(() => KillProcessTree(process));
         try
@@ -59,6 +61,25 @@ public sealed class ProcessRunner : IProcessRunner
 
             throw;
         }
+    }
+
+    private static async Task<string> ReadAndReportAsync(
+        StreamReader reader,
+        IProgress<string>? output,
+        CancellationToken cancellationToken)
+    {
+        var builder = new StringBuilder();
+        while (true)
+        {
+            var line = await reader.ReadLineAsync(cancellationToken);
+            if (line is null)
+                break;
+
+            builder.AppendLine(line);
+            output?.Report(line);
+        }
+
+        return builder.ToString();
     }
 
     private static void KillProcessTree(Process process)

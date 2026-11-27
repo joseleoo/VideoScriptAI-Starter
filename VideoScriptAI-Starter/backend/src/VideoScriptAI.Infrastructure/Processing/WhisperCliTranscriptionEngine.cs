@@ -49,7 +49,7 @@ public sealed partial class WhisperCliTranscriptionEngine(
             "-l", language,
             "-t", options.WhisperThreads.ToString(),
             "-ng",
-            "-np",
+            "-pp",
             "-oj",
             "-of", outputPrefix
         };
@@ -57,7 +57,13 @@ public sealed partial class WhisperCliTranscriptionEngine(
         try
         {
             progress?.Report(5);
-            var result = await processRunner.RunAsync(options.WhisperPath, arguments, cancellationToken);
+            var output = new InlineProgress<string>(line =>
+            {
+                var match = ProgressPattern().Match(line);
+                if (match.Success && int.TryParse(match.Groups["value"].Value, out var value))
+                    progress?.Report(Math.Clamp(5 + value * 85 / 100, 5, 90));
+            });
+            var result = await processRunner.RunAsync(options.WhisperPath, arguments, cancellationToken, output);
             if (result.ExitCode != 0)
             {
                 throw new InvalidOperationException(
@@ -105,8 +111,16 @@ public sealed partial class WhisperCliTranscriptionEngine(
         return value.ToLowerInvariant();
     }
 
+    [GeneratedRegex(@"progress\s*=\s*(?<value>\d{1,3})\s*%", RegexOptions.IgnoreCase)]
+    private static partial Regex ProgressPattern();
+
     [GeneratedRegex(@"^[a-z]{2}(?:-[a-z0-9]{2,8})?$", RegexOptions.IgnoreCase)]
     private static partial Regex LanguagePattern();
+
+    private sealed class InlineProgress<T>(Action<T> onReport) : IProgress<T>
+    {
+        public void Report(T value) => onReport(value);
+    }
 
     private sealed class WhisperOutput
     {

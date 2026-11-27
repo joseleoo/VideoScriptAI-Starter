@@ -76,7 +76,7 @@ export default function MeetingDetails({ meeting, providers, onUpdated, onDelete
     setError(null);
     try {
       await cancelMeeting(meeting.id);
-      onUpdated({ ...meeting, status: "Cancelled" });
+      onUpdated({ ...meeting, status: "Cancelled", progress: 0 });
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : "No se pudo cancelar.");
     }

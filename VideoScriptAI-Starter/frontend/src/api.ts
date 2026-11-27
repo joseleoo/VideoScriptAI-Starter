@@ -231,6 +231,8 @@ export async function cancelMeeting(id: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/api/meetings/${id}/cancel`, {
     method: "POST"
   });
+  if (response.status === 404)
+    return;
   if (!response.ok)
     throw new Error(await readErrorMessage(response));
 }
