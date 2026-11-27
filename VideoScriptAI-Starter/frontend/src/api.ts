@@ -91,6 +91,14 @@ export async function cancelJob(id: string): Promise<void> {
     throw new Error(await response.text());
 }
 
+export async function deleteJob(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/jobs/${id}`, {
+    method: "DELETE"
+  });
+  if (!response.ok)
+    throw new Error(await readErrorMessage(response));
+}
+
 export async function updateTranscript(
   id: string,
   segments: TranscriptSegment[]
@@ -262,6 +270,13 @@ export async function regenerateMeetingSummary(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ summaryProvider: summaryProvider ?? null })
+  });
+  return readJson<Meeting>(response);
+}
+
+export async function retryMeetingConversion(id: string): Promise<Meeting> {
+  const response = await fetch(`${API_BASE_URL}/api/meetings/${id}/retry`, {
+    method: "POST"
   });
   return readJson<Meeting>(response);
 }

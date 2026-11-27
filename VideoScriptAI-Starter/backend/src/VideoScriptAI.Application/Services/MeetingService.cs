@@ -189,6 +189,24 @@ public sealed partial class MeetingService(
         return Map(meeting);
     }
 
+    public async Task<MeetingDto?> RetryAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var meeting = await repository.GetAsync(id, cancellationToken);
+        if (meeting is null ||
+            meeting.Status != MeetingStatus.Failed ||
+            string.IsNullOrWhiteSpace(meeting.AudioPath))
+        {
+            return null;
+        }
+
+        meeting.Retry();
+        cancellation.Remove(id);
+        await repository.SaveChangesAsync(cancellationToken);
+        await queue.EnqueueAsync(id, cancellationToken);
+        await PublishAsync(meeting, "Reunión en cola de procesamiento.", cancellationToken);
+        return Map(meeting);
+    }
+
     public async Task<bool> CancelAsync(Guid id, CancellationToken cancellationToken)
     {
         var meeting = await repository.GetAsync(id, cancellationToken);

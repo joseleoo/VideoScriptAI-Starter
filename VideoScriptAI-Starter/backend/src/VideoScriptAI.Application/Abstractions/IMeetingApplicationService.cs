@@ -24,6 +24,7 @@ public interface IMeetingApplicationService
     Task<MeetingDto?> UpdateSegmentsAsync(Guid id, UpdateMeetingSegmentsRequest request, CancellationToken cancellationToken);
     Task<MeetingDto?> UpdateSummaryAsync(Guid id, string summary, CancellationToken cancellationToken);
     Task<MeetingDto?> RegenerateSummaryAsync(Guid id, string? summaryProvider, CancellationToken cancellationToken);
+    Task<MeetingDto?> RetryAsync(Guid id, CancellationToken cancellationToken);
     Task<bool> CancelAsync(Guid id, CancellationToken cancellationToken);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
     Task<ExportFileDto?> PrepareExportAsync(Guid id, string format, CancellationToken cancellationToken);

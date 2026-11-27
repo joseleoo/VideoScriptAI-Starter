@@ -131,18 +131,6 @@ export default function MeetingNotesPanel({ recordingAvailable }: Props) {
     return () => window.clearInterval(interval);
   }, [recording.isRecording]);
 
-  async function handleRetry() {
-    setError(null);
-    setLoading(true);
-    try {
-      await load();
-    } catch (exception) {
-      setError(exception instanceof Error ? exception.message : "No se pudo reconectar con el backend.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function handleDelete(id: string) {
     setError(null);
     try {
@@ -341,14 +329,7 @@ export default function MeetingNotesPanel({ recordingAvailable }: Props) {
             </div>
           )}
 
-          {error && (
-            <div className="error-note error-actions">
-              <span>{error}</span>
-              <button type="button" className="secondary" onClick={handleRetry}>
-                Reintentar
-              </button>
-            </div>
-          )}
+          {error && <div className="error-note">{error}</div>}
         </section>
 
         <section className="panel history-panel">

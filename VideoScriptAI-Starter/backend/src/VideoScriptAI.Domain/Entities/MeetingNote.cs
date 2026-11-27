@@ -113,6 +113,21 @@ public sealed class MeetingNote
         CompletedAtUtc ??= DateTimeOffset.UtcNow;
     }
 
+    public void Retry()
+    {
+        if (string.IsNullOrWhiteSpace(AudioPath))
+            throw new InvalidOperationException("La reunión no tiene audio para volver a procesar.");
+
+        Status = MeetingStatus.Pending;
+        Progress = 0;
+        ErrorMessage = null;
+        CompletedAtUtc = null;
+        DetectedLanguage = string.Empty;
+        Summary = string.Empty;
+        Segments.Clear();
+        RebuildFullText();
+    }
+
     private void RebuildFullText()
     {
         FullText = string.Join(Environment.NewLine, Segments

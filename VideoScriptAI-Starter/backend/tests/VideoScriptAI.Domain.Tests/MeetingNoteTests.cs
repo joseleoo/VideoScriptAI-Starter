@@ -57,6 +57,26 @@ public sealed class MeetingNoteTests
         Assert.NotNull(meeting.CompletedAtUtc);
     }
 
+    [Fact]
+    public void Retry_clears_failed_conversion_and_prepares_the_meeting_again()
+    {
+        var meeting = NewMeeting();
+        meeting.AttachAudio("C:\\VideoScriptAI\\meetings\\daily.wav");
+        meeting.SetTranscript("es", new[] { new MeetingSegmentInput(0, 0, 2, "Parcial", string.Empty) });
+        meeting.SetSummary("Resumen parcial", SummaryProvider.Extractive);
+        meeting.Fail("Fallo al transcribir");
+
+        meeting.Retry();
+
+        Assert.Equal(MeetingStatus.Pending, meeting.Status);
+        Assert.Equal(0, meeting.Progress);
+        Assert.Null(meeting.ErrorMessage);
+        Assert.Null(meeting.CompletedAtUtc);
+        Assert.Empty(meeting.Segments);
+        Assert.Equal(string.Empty, meeting.FullText);
+        Assert.Equal(string.Empty, meeting.Summary);
+    }
+
     private static MeetingNote NewMeeting() =>
         new("Reunión de prueba", MeetingSource.Upload, "es", SummaryProvider.Extractive);
 }

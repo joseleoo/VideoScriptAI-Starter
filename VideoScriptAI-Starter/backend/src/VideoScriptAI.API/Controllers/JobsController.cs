@@ -80,6 +80,13 @@ public sealed class JobsController(IJobApplicationService jobs) : ControllerBase
         return cancelled ? Accepted() : NotFound();
     }
 
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var deleted = await jobs.DeleteJobAsync(id, cancellationToken);
+        return deleted ? NoContent() : NotFound();
+    }
+
     [HttpPut("{id:guid}/transcript")]
     public async Task<IActionResult> UpdateTranscript(
         Guid id,

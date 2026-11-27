@@ -145,6 +145,15 @@ public sealed class MeetingsController(
         return meeting is null ? NotFound() : Ok(meeting);
     }
 
+    [HttpPost("{id:guid}/retry")]
+    public async Task<IActionResult> Retry(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var meeting = await meetings.RetryAsync(id, cancellationToken);
+        return meeting is null ? NotFound() : Ok(meeting);
+    }
+
     [HttpGet("{id:guid}/export/{format}")]
     public async Task<IActionResult> Export(Guid id, string format, CancellationToken cancellationToken)
     {

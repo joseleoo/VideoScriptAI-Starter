@@ -92,6 +92,30 @@ public sealed partial class TranscriptionJobService(
         return true;
     }
 
+    public async Task<bool> DeleteJobAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var job = await repository.GetAsync(id, cancellationToken);
+        if (job is null)
+            return false;
+
+        if (job.Status is not (TranscriptionStatus.Completed or TranscriptionStatus.Failed or TranscriptionStatus.Cancelled))
+            cancellation.Cancel(id);
+
+        if (!string.IsNullOrWhiteSpace(job.StoredVideoPath))
+        {
+            try
+            {
+                await fileStorage.DeleteAsync(job.StoredVideoPath, cancellationToken);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+            {
+            }
+        }
+
+        await repository.RemoveAsync(job, cancellationToken);
+        return true;
+    }
+
     public async Task<JobDto?> UpdateTranscriptAsync(
         Guid id,
         UpdateTranscriptRequest request,

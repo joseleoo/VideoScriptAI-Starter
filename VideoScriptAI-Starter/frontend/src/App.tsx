@@ -18,8 +18,6 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [signalrError, setSignalrError] = useState<string | null>(null);
-  const [retryToken, setRetryToken] = useState(0);
-  const [retrying, setRetrying] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const replaceJob = useCallback((job: Job) => {
@@ -58,8 +56,6 @@ export default function App() {
         }
       } catch {
         if (active) setHealthError("No se pudo conectar con ASP.NET Core.");
-      } finally {
-        if (active) setRetrying(false);
       }
     };
 
@@ -95,18 +91,17 @@ export default function App() {
       window.clearInterval(healthInterval);
       if (connection) void connection.stop();
     };
-  }, [refresh, replaceJob, retryToken]);
-
-  function handleRetry() {
-    setRetrying(true);
-    setHealth(null);
-    setRetryToken(token => token + 1);
-  }
+  }, [refresh, replaceJob]);
 
   function handleCreated(job: Job) {
     setJobs((current) => [job, ...current]);
     setSelectedId(job.id);
     void refresh();
+  }
+
+  function handleJobDeleted(id: string) {
+    setJobs((current) => current.filter((job) => job.id !== id));
+    setSelectedId((current) => current === id ? null : current);
   }
 
   async function handleCancel(id: string) {
@@ -165,16 +160,9 @@ export default function App() {
         </nav>
       </header>
 
-      {notice && (
-        <div className="error-note global-error error-actions">
-          <span>{notice}</span>
-          <button type="button" className="secondary" onClick={handleRetry} disabled={retrying}>
-            {retrying ? "Reintentando..." : "Reintentar"}
-          </button>
-        </div>
-      )}
+      {notice && <div className="error-note global-error">{notice}</div>}
 
-      {mode === "video" ? (
+      {mode === "video" && (
         <div className="layout">
           <div className="layout-column">
             <UploadPanel onCreated={handleCreated} />
@@ -197,6 +185,7 @@ export default function App() {
                 job={selectedJob}
                 onCancel={(id) => void handleCancel(id)}
                 onTranscriptSaved={replaceJob}
+                onDeleted={handleJobDeleted}
               />
             ) : (
               <section className="panel details-panel placeholder">
@@ -207,9 +196,13 @@ export default function App() {
             )}
           </div>
         </div>
-      ) : mode === "speech" ? (
+      )}
+
+      <div hidden={mode !== "speech"}>
         <TextToSpeechPanel />
-      ) : (
+      </div>
+
+      {mode === "meetings" && (
         <MeetingNotesPanel recordingAvailable={health?.recordingAvailable ?? false} />
       )}
 

@@ -4,6 +4,7 @@ import {
   deleteMeeting,
   downloadMeetingExport,
   regenerateMeetingSummary,
+  retryMeetingConversion,
   updateMeetingSummary
 } from "../api";
 import type { Meeting, SummaryProvider, SummaryProviderInfo } from "../types";
@@ -52,6 +53,20 @@ export default function MeetingDetails({ meeting, providers, onUpdated, onDelete
       onUpdated(await regenerateMeetingSummary(meeting.id, regenerateProvider));
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : "No se pudo generar el resumen.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function retryConversion() {
+    setBusy(true);
+    setError(null);
+    try {
+      onUpdated(await retryMeetingConversion(meeting.id));
+    } catch (exception) {
+      setError(exception instanceof Error
+        ? exception.message
+        : "No se pudo reintentar la conversión.");
     } finally {
       setBusy(false);
     }
@@ -112,7 +127,16 @@ export default function MeetingDetails({ meeting, providers, onUpdated, onDelete
         <span>Creado {new Date(meeting.createdAtUtc).toLocaleString()}</span>
       </div>
 
-      {meeting.errorMessage && <div className="error-note">{meeting.errorMessage}</div>}
+      {meeting.errorMessage && (
+        <div className="error-note error-actions">
+          <span>{meeting.errorMessage}</span>
+          {meeting.status === "Failed" && (
+            <button type="button" className="secondary" onClick={retryConversion} disabled={busy}>
+              {busy ? "Reintentando..." : "Reintentar conversión"}
+            </button>
+          )}
+        </div>
+      )}
       <div className="tts-actions">
         {isActive && (
           <button type="button" className="secondary" onClick={cancel}>

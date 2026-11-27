@@ -28,6 +28,13 @@ public sealed class JobRepository(VideoScriptDbContext dbContext) : IJobReposito
         return jobs.OrderByDescending(x => x.CreatedAtUtc).ToArray();
     }
 
+    public async Task RemoveAsync(TranscriptionJob job, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(job);
+        dbContext.Jobs.Remove(job);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken) =>
         dbContext.SaveChangesAsync(cancellationToken);
 }

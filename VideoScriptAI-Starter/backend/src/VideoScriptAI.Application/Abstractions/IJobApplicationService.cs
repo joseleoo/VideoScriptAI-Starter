@@ -19,6 +19,7 @@ public interface IJobApplicationService
     Task<JobDto?> GetJobAsync(Guid id, CancellationToken cancellationToken);
     Task<IReadOnlyList<JobDto>> ListJobsAsync(CancellationToken cancellationToken);
     Task<bool> CancelJobAsync(Guid id, CancellationToken cancellationToken);
+    Task<bool> DeleteJobAsync(Guid id, CancellationToken cancellationToken);
 
     Task<JobDto?> UpdateTranscriptAsync(
         Guid id,

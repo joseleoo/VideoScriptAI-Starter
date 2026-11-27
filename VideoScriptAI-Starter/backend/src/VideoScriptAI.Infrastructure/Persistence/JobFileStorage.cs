@@ -85,6 +85,25 @@ public sealed class JobFileStorage(StorageOptions options, IHttpClientFactory ht
         }
     }
 
+    public Task DeleteAsync(string path, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+
+        var fullPath = Path.GetFullPath(path);
+        EnsureInsideDirectory(fullPath, options.UploadsPath);
+        if (File.Exists(fullPath))
+            File.Delete(fullPath);
+
+        return Task.CompletedTask;
+    }
+
+    private static void EnsureInsideDirectory(string path, string directory)
+    {
+        var prefix = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Resolved upload path is outside the storage directory.");
+    }
+
     private async Task<string> WriteVideoAsync(
         string extension,
         string requestedName,
