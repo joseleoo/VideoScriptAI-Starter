@@ -54,6 +54,18 @@ function Set-EngineEnvironment {
     }
 }
 
+function Stop-StaleApiProcesses {
+    $processes = @(Get-Process -Name "VideoScriptAI.API" -ErrorAction SilentlyContinue)
+    foreach ($process in $processes) {
+        Write-Host "Stopping existing VideoScriptAI.API process (PID $($process.Id))."
+        Stop-Process -Id $process.Id -Force
+    }
+
+    if ($processes.Count -gt 0) {
+        Start-Sleep -Seconds 1
+    }
+}
+
 function Assert-EngineFiles {
     foreach ($path in @(
         $env:VIDEOSCRIPTAI_FFMPEG_PATH,
@@ -69,6 +81,7 @@ function Assert-EngineFiles {
 function Invoke-Api {
     Assert-ProjectLayout
     Assert-RequiredCommand "dotnet"
+    Stop-StaleApiProcesses
     Set-EngineEnvironment
     Assert-EngineFiles
 
@@ -181,6 +194,7 @@ switch ($Mode) {
         Assert-RequiredCommand "dotnet"
         Assert-RequiredCommand "node"
         Assert-RequiredCommand "npm"
+        Stop-StaleApiProcesses
         Set-EngineEnvironment
 
         Start-ProjectWindow -Title "VideoScript AI - API" -ChildMode "Api"

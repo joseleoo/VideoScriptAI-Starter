@@ -1,4 +1,5 @@
 using System.Runtime.Versioning;
+using System.Text;
 using System.Speech.Synthesis;
 using VideoScriptAI.Application.Abstractions;
 using VideoScriptAI.Application.Configuration;
@@ -12,8 +13,6 @@ public sealed class TextToSpeechService(
     TextToSpeechOptions speech,
     IProcessRunner runner) : ITextToSpeechService
 {
-    private const int MaxTextLength = 10_000;
-
     [SupportedOSPlatform("windows")]
     public async Task<IReadOnlyList<TtsVoiceDto>> GetVoicesAsync(CancellationToken cancellationToken)
     {
@@ -46,8 +45,8 @@ public sealed class TextToSpeechService(
         var text = (request.Text ?? string.Empty).Trim();
         if (text.Length == 0)
             throw new ArgumentException("Text is required.", nameof(request));
-        if (text.Length > MaxTextLength)
-            throw new ArgumentException($"Text must be {MaxTextLength} characters or fewer.", nameof(request));
+        if (text.Length > speech.MaxTextLength)
+            throw new ArgumentException($"Text must be {speech.MaxTextLength} characters or fewer.", nameof(request));
 
         var provider = NormalizeProvider(request.Provider);
         var voiceId = NormalizeVoiceId(request.VoiceId);
@@ -178,13 +177,24 @@ public sealed class TextToSpeechService(
         string outputPath,
         CancellationToken cancellationToken)
     {
-        var result = await runner.RunAsync(
-            ResolvePythonPath(),
-            ["-m", "edge_tts", "--voice", voiceId, "--text", text, "--write-media", outputPath],
-            cancellationToken);
+        var textPath = Path.Combine(Path.GetTempPath(), $"videoscriptai-tts-{Guid.NewGuid():N}.txt");
+        try
+        {
+            await File.WriteAllTextAsync(textPath, text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), cancellationToken);
 
-        if (result.ExitCode != 0)
-            throw new InvalidOperationException("Edge TTS failed: " + Describe(result));
+            var result = await runner.RunAsync(
+                ResolvePythonPath(),
+                ["-m", "edge_tts", "--voice", voiceId, "--file", textPath, "--write-media", outputPath],
+                cancellationToken);
+
+            if (result.ExitCode != 0)
+                throw new InvalidOperationException("Edge TTS failed: " + Describe(result));
+        }
+        finally
+        {
+            if (File.Exists(textPath))
+                File.Delete(textPath);
+        }
     }
 
     private string ResolvePythonPath()

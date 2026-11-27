@@ -139,6 +139,10 @@ textarea { resize: vertical; line-height: 1.5; }
   background: linear-gradient(135deg, #7c6cf2, #9b8cff); color: white; font-weight: 700;
 }
 .tts-hint { color: #8995aa; font-size: 12px; }
+.tts-progress { margin-top: 16px; }
+.tts-progress .progress-track { margin-top: 8px; }
+.progress-fill.indeterminate { width: 35%; animation: tts-progress 1.1s ease-in-out infinite; }
+@keyframes tts-progress { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
 .audio-result { margin-top: 24px; border-top: 1px solid #273149; padding-top: 20px; }
 .audio-result audio { width: 100%; margin: 16px 0 12px; }
 .button-link {

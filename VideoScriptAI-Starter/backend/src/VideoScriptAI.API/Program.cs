@@ -62,10 +62,15 @@ Directory.CreateDirectory(storageOptions.AudioPath);
 Directory.CreateDirectory(storageOptions.SpeechPath);
 Directory.CreateDirectory(storageOptions.ExportsPath);
 
+var maxTextLength = builder.Configuration.GetValue("TextToSpeech:MaxTextLength", 100_000);
+if (int.TryParse(Environment.GetEnvironmentVariable("VIDEOSCRIPTAI_TTS_MAX_TEXT_LENGTH"), out var envMaxTextLength) && envMaxTextLength > 0)
+    maxTextLength = envMaxTextLength;
+
 var speechOptions = new TextToSpeechOptions(
     Environment.GetEnvironmentVariable("VIDEOSCRIPTAI_PYTHON_PATH")
     ?? builder.Configuration["TextToSpeech:PythonPath"]
-    ?? "python");
+    ?? "python",
+    Math.Max(1, maxTextLength));
 
 var summaryOptions = builder.Configuration.GetSection("Summary").Get<SummaryOptions>() ?? new SummaryOptions();
 summaryOptions.DefaultProvider =

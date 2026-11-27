@@ -36,8 +36,33 @@ public class TextToSpeechServiceTests
         var service = CreateService();
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.SynthesizeAsync(
-            new SynthesizeSpeechRequest(new string('a', 10_001), "Windows", "Microsoft David Desktop"),
+            new SynthesizeSpeechRequest(new string('a', 100_001), "Windows", "Microsoft David Desktop"),
             CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task SynthesizeAsync_EdgePassesLongTextThroughTempFile()
+    {
+        var runner = new EdgeStubProcessRunner();
+        var service = new TextToSpeechService(
+            new StorageOptions(Path.Combine(Path.GetTempPath(), "videoscriptai-tts-tests"), 1024),
+            new EngineOptions
+            {
+                FfmpegPath = "ffmpeg.exe",
+                WhisperPath = "whisper.exe",
+                ModelsPath = Path.GetTempPath()
+            },
+            new TextToSpeechOptions("python"),
+            runner);
+        var text = new string('a', 20_000);
+
+        await service.SynthesizeAsync(
+            new SynthesizeSpeechRequest(text, "Edge", "en-US-AriaNeural"),
+            CancellationToken.None);
+
+        Assert.Contains("--file", runner.SynthesizeArguments!);
+        Assert.DoesNotContain("--text", runner.SynthesizeArguments!);
+        Assert.Equal(text, runner.TextFromFile);
     }
 
     [Fact]
@@ -78,5 +103,29 @@ public class TextToSpeechServiceTests
             IReadOnlyList<string> arguments,
             CancellationToken cancellationToken) =>
             Task.FromResult(new ProcessExecutionResult(0, string.Empty, string.Empty));
+    }
+
+    private sealed class EdgeStubProcessRunner : IProcessRunner
+    {
+        public IReadOnlyList<string>? SynthesizeArguments { get; private set; }
+        public string? TextFromFile { get; private set; }
+
+        public Task<ProcessExecutionResult> RunAsync(
+            string executablePath,
+            IReadOnlyList<string> arguments,
+            CancellationToken cancellationToken)
+        {
+            if (arguments.Contains("--list-voices"))
+                return Task.FromResult(new ProcessExecutionResult(0, "en-US-AriaNeural Female News\n", string.Empty));
+
+            SynthesizeArguments = arguments;
+            var textIndex = Array.IndexOf(arguments.ToArray(), "--file");
+            TextFromFile = File.ReadAllText(arguments[textIndex + 1]);
+
+            var mediaIndex = Array.IndexOf(arguments.ToArray(), "--write-media");
+            File.WriteAllText(arguments[mediaIndex + 1], "mp3");
+
+            return Task.FromResult(new ProcessExecutionResult(0, string.Empty, string.Empty));
+        }
     }
 }

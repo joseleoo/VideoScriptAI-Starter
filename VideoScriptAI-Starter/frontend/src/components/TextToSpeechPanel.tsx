@@ -7,6 +7,16 @@ const providers: Array<{ id: TtsProvider; label: string }> = [
   { id: "Edge", label: "Edge TTS · en línea" }
 ];
 
+function isSpanish(voice: TtsVoice): boolean {
+  return voice.locale.trim().toLowerCase().startsWith("es") ||
+    voice.name.toLowerCase().includes("spanish") ||
+    voice.name.toLowerCase().includes("español");
+}
+
+function pickVoice(items: TtsVoice[]): TtsVoice | undefined {
+  return items.find(isSpanish) ?? items[0];
+}
+
 export default function TextToSpeechPanel() {
   const [voices, setVoices] = useState<TtsVoice[]>([]);
   const [provider, setProvider] = useState<TtsProvider>("Windows");
@@ -22,7 +32,9 @@ export default function TextToSpeechPanel() {
     () => voices
       .filter((voice) => voice.provider === provider)
       .sort((left, right) =>
-        left.locale.localeCompare(right.locale) || left.name.localeCompare(right.name)),
+        Number(isSpanish(right)) - Number(isSpanish(left)) ||
+        left.locale.localeCompare(right.locale) ||
+        left.name.localeCompare(right.name)),
     [voices, provider]
   );
 
@@ -33,7 +45,12 @@ export default function TextToSpeechPanel() {
       .then((items) => {
         if (!active) return;
         setVoices(items);
-        setVoiceId(items.find((item) => item.provider === "Windows")?.id ?? "");
+        const preferredProvider: TtsProvider =
+          items.some((item) => item.provider === "Windows" && isSpanish(item)) ? "Windows"
+            : items.some((item) => item.provider === "Edge" && isSpanish(item)) ? "Edge"
+              : "Windows";
+        setProvider(preferredProvider);
+        setVoiceId(pickVoice(items.filter((item) => item.provider === preferredProvider))?.id ?? "");
         if (!items.some((item) => item.provider === "Edge"))
           setVoiceError("Edge TTS no está disponible. Instala edge-tts para Python.");
       })
@@ -147,7 +164,21 @@ export default function TextToSpeechPanel() {
         </span>
       </div>
 
+      {busy && (
+        <div className="tts-progress" role="status" aria-live="polite">
+          <span className="tts-hint">
+            Generando MP3 con {provider === "Windows" ? "las voces de Windows" : "Edge TTS"}...
+          </span>
+          <div className="progress-track">
+            <div className="progress-fill active indeterminate" />
+          </div>
+        </div>
+      )}
+
       {voiceError && <div className="info-note">{voiceError}</div>}
+      {voices.length > 0 && !voices.some(isSpanish) && (
+        <div className="info-note">No se encontraron voces en español; se seleccionó la primera disponible.</div>
+      )}
       {error && <div className="error-note">{error}</div>}
 
       {audioUrl && (
