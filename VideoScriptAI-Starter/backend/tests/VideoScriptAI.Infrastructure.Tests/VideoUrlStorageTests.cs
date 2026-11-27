@@ -22,4 +22,28 @@ public sealed class VideoUrlStorageTests
         await Assert.ThrowsAsync<ArgumentException>(
             () => storage.SaveUrlAsync(new VideoUrl(url), CancellationToken.None));
     }
+
+    [Fact]
+    public async Task DeleteAsync_removes_stored_video_and_rejects_outside_paths()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"vsa-delete-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(root, "uploads"));
+
+        try
+        {
+            var storage = new JobFileStorage(new StorageOptions(root, 1024 * 1024), null!);
+            var path = Path.Combine(root, "uploads", "sample.mp4");
+            await File.WriteAllTextAsync(path, "video");
+
+            await storage.DeleteAsync(path, CancellationToken.None);
+            Assert.False(File.Exists(path));
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                storage.DeleteAsync(Path.Combine(root, "outside.mp4"), CancellationToken.None));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
 }
