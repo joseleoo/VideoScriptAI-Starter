@@ -114,6 +114,8 @@ export type MeetingProgressNotification = {
   message: string | null;
 };
 
+export type RecordingCaptureSource = "System" | "Microphone" | "Both";
+
 export type RecordingStatus = {
   isRecording: boolean;
   meetingId: string | null;

@@ -15,6 +15,7 @@ public interface IMeetingApplicationService
         string title,
         string language,
         string summaryProvider,
+        RecordingCaptureSource captureSource,
         CancellationToken cancellationToken);
 
     Task<MeetingDto?> StopRecordingAsync(CancellationToken cancellationToken);

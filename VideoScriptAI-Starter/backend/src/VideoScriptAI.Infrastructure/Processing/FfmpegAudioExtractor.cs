@@ -51,6 +51,8 @@ public sealed class FfmpegAudioExtractor(IProcessRunner processRunner, EngineOpt
             throw new InvalidOperationException(
                 $"FFmpeg audio extraction failed (exit code {result.ExitCode}): {result.StandardError.Trim()}");
         }
+        if (new FileInfo(outputPath).Length <= 128)
+            throw new InvalidOperationException("The media file does not contain audio.");
 
         return outputPath;
     }

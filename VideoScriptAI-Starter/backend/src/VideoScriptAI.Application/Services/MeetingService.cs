@@ -42,6 +42,7 @@ public sealed partial class MeetingService(
         string title,
         string language,
         string summaryProvider,
+        RecordingCaptureSource captureSource,
         CancellationToken cancellationToken)
     {
         if (recorder.IsRecording)
@@ -55,7 +56,7 @@ public sealed partial class MeetingService(
 
         try
         {
-            await recorder.StartAsync(meeting.Id, cancellationToken);
+            await recorder.StartAsync(meeting.Id, captureSource, cancellationToken);
         }
         catch
         {
@@ -78,7 +79,19 @@ public sealed partial class MeetingService(
         if (meeting is null)
             return null;
 
-        var audioPath = await recorder.StopAsync(cancellationToken);
+        string audioPath;
+        try
+        {
+            audioPath = await recorder.StopAsync(cancellationToken);
+        }
+        catch
+        {
+            meeting.Fail("No se capturó audio. Comprueba el dispositivo seleccionado y vuelve a intentarlo.");
+            await repository.SaveChangesAsync(CancellationToken.None);
+            await PublishAsync(meeting, "La grabación no contiene audio.", CancellationToken.None);
+            throw;
+        }
+
         meeting.AttachAudio(audioPath);
         await repository.SaveChangesAsync(cancellationToken);
         await queue.EnqueueAsync(meeting.Id, cancellationToken);

@@ -75,6 +75,7 @@ public sealed class MeetingsController(
                 request?.Title ?? string.Empty,
                 request?.Language ?? "auto",
                 ResolveProvider(request?.SummaryProvider),
+                ParseCaptureSource(request?.CaptureSource),
                 cancellationToken);
 
             return AcceptedAtAction(nameof(Get), new { id = meeting.Id }, meeting);
@@ -170,6 +171,14 @@ public sealed class MeetingsController(
             return BadRequest(new { message = exception.Message });
         }
     }
+
+    private static RecordingCaptureSource ParseCaptureSource(string? value) =>
+        value?.Trim().ToLowerInvariant() switch
+        {
+            "system" => RecordingCaptureSource.System,
+            "microphone" => RecordingCaptureSource.Microphone,
+            _ => RecordingCaptureSource.Both
+        };
 
     private string ResolveProvider(string? value) =>
         string.IsNullOrWhiteSpace(value)

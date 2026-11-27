@@ -7,6 +7,7 @@ import type {
   Meeting,
   MeetingProgressNotification,
   MeetingSegment,
+  RecordingCaptureSource,
   RecordingStatus,
   SynthesizeSpeechInput,
   SummaryProvider,
@@ -208,12 +209,13 @@ export async function createMeetingFromUpload(
 export async function startMeetingRecording(
   title: string,
   language: string,
-  summaryProvider: SummaryProvider
+  summaryProvider: SummaryProvider,
+  captureSource: RecordingCaptureSource = "Both"
 ): Promise<Meeting> {
   const response = await fetch(`${API_BASE_URL}/api/meetings/record/start`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, language, summaryProvider })
+    body: JSON.stringify({ title, language, summaryProvider, captureSource })
   });
   return readJson<Meeting>(response);
 }

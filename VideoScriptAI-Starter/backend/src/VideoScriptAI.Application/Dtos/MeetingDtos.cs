@@ -28,7 +28,8 @@ public sealed record MeetingSegmentDto(
 public sealed record CreateMeetingRequest(
     string? Title,
     string? Language,
-    string? SummaryProvider);
+    string? SummaryProvider,
+    string? CaptureSource);
 
 public sealed record UpdateMeetingSegmentsRequest(
     IReadOnlyList<MeetingSegmentDto> Segments);

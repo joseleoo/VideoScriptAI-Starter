@@ -156,7 +156,7 @@ public sealed class FfmpegAudioExtractorTests
             {
                 var path = arguments[^1];
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                File.WriteAllText(path, "stub wav");
+                File.WriteAllText(path, new string('x', 256));
             }
 
             return Task.FromResult(Result);

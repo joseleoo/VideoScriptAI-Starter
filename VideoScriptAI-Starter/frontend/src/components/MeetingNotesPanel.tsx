@@ -12,7 +12,13 @@ import {
   stopMeetingRecording,
   subscribeToMeetingProgress
 } from "../api";
-import type { Meeting, RecordingStatus, SummaryProvider, SummaryProviderInfo } from "../types";
+import type {
+  Meeting,
+  RecordingCaptureSource,
+  RecordingStatus,
+  SummaryProvider,
+  SummaryProviderInfo
+} from "../types";
 import MeetingDetails from "./MeetingDetails";
 
 type Props = {
@@ -40,6 +46,7 @@ export default function MeetingNotesPanel({ recordingAvailable }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [providers, setProviders] = useState<SummaryProviderInfo[]>([]);
   const [provider, setProvider] = useState<SummaryProvider>("Extractive");
+  const [captureSource, setCaptureSource] = useState<RecordingCaptureSource>("Both");
   const [language, setLanguage] = useState("auto");
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -147,7 +154,7 @@ export default function MeetingNotesPanel({ recordingAvailable }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const meeting = await startMeetingRecording(title.trim(), language, provider);
+      const meeting = await startMeetingRecording(title.trim(), language, provider, captureSource);
       replaceMeeting(meeting);
       setSelectedId(meeting.id);
       setRecording(await getRecordingStatus());
@@ -238,6 +245,21 @@ export default function MeetingNotesPanel({ recordingAvailable }: Props) {
     </label>
   );
 
+  const captureSourceSelect = (
+    <label>
+      Fuente de audio
+      <select
+        value={captureSource}
+        onChange={event => setCaptureSource(event.target.value as RecordingCaptureSource)}
+        disabled={busy || recording.isRecording}
+      >
+        <option value="Both">Micrófono + audio del sistema</option>
+        <option value="Microphone">Solo micrófono</option>
+        <option value="System">Solo audio del sistema</option>
+      </select>
+    </label>
+  );
+
   return (
     <div className="layout">
       <div className="layout-column">
@@ -288,6 +310,7 @@ export default function MeetingNotesPanel({ recordingAvailable }: Props) {
 
           {sourceMode === "live" ? (
             <div className="meeting-capture">
+              <div className="settings-row">{captureSourceSelect}</div>
               {recording.isRecording && (
                 <div className="recording-badge">
                   <span className="recording-dot" /> Grabando {formatElapsed(elapsed)}
@@ -306,7 +329,7 @@ export default function MeetingNotesPanel({ recordingAvailable }: Props) {
               </div>
               <div className="info-note">
                 {!recordingAvailable && "El backend no ha confirmado la captura en Windows; si falla, usa la opción de subir una grabación. "}
-                Captura el audio que escuchas del sistema en Windows. Habla con micrófono y activa el sonido de la reunión para incluir a todos los participantes.
+                La opción recomendada mezcla tu micrófono con el audio del sistema para incluir a todos los participantes. Si no se capta sonido, comprueba el dispositivo seleccionado o sube la grabación.
               </div>
             </div>
           ) : (
