@@ -24,6 +24,37 @@ public sealed class VideoUrlStorageTests
     }
 
     [Fact]
+    public async Task SaveUpload_accepts_m4a_audio_files()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"vsa-m4a-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(root, "uploads"));
+
+        try
+        {
+            var storage = new JobFileStorage(new StorageOptions(root, 1024 * 1024), null!);
+            var header = new byte[16];
+            header[4] = (byte)'f';
+            header[5] = (byte)'t';
+            header[6] = (byte)'y';
+            header[7] = (byte)'p';
+            header[8] = (byte)'M';
+            header[9] = (byte)'4';
+            header[10] = (byte)'A';
+            header[11] = (byte)' ';
+
+            await using var content = new MemoryStream(header);
+            var path = await storage.SaveUploadAsync(new UploadedVideo("sample.m4a", content), CancellationToken.None);
+
+            Assert.True(File.Exists(path));
+            Assert.EndsWith(".m4a", path);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task DeleteAsync_removes_stored_video_and_rejects_outside_paths()
     {
         var root = Path.Combine(Path.GetTempPath(), $"vsa-delete-test-{Guid.NewGuid():N}");

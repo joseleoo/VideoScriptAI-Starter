@@ -99,11 +99,11 @@ export default function UploadPanel({ onCreated }: Props) {
           }}
         >
           <div className="upload-icon">↑</div>
-          <strong>{file ? file.name : "Arrastra un video o haz clic para elegirlo"}</strong>
-          <span>MP4, MKV, MOV y AVI</span>
+          <strong>{file ? file.name : "Arrastra un video o audio y haz clic para elegirlo"}</strong>
+          <span>MP4, MKV, MOV, AVI, M4A, MP3, WAV, AAC, FLAC, OGG y WEBM</span>
           <input
             type="file"
-            accept=".mp4,.mkv,.mov,.avi"
+            accept="video/*,audio/*,.mkv,.webm,.flac,.m4a,.mp3,.wav,.aac,.ogg,.avi,.mov,.mp4"
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
         </div>

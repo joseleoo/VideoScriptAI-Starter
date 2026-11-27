@@ -43,6 +43,35 @@ public sealed class FfmpegAudioExtractorTests
         }
     }
 
+    [Theory]
+    [InlineData(".mp3")]
+    [InlineData(".m4a")]
+    [InlineData(".wav")]
+    [InlineData(".flac")]
+    public async Task ExtractWavAsync_accepts_audio_files(string extension)
+    {
+        var root = NewTempRoot();
+        var audioPath = Path.Combine(root, "sample" + extension);
+        await File.WriteAllTextAsync(audioPath, "stub");
+        var ffmpegPath = await WriteStubExecutableAsync(root);
+
+        try
+        {
+            var runner = new FakeProcessRunner();
+            var extractor = new FfmpegAudioExtractor(runner, new EngineOptions { FfmpegPath = ffmpegPath });
+
+            var outputPath = await extractor.ExtractWavAsync(
+                audioPath, Path.Combine(root, "audio"), CancellationToken.None);
+
+            Assert.Equal(ffmpegPath, runner.ExecutablePath);
+            Assert.Equal(Path.Combine(root, "audio", "sample.wav"), outputPath);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task ExtractWavAsync_rejects_failed_process()
     {

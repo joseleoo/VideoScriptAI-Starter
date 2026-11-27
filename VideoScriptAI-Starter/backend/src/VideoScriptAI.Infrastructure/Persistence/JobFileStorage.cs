@@ -12,7 +12,7 @@ public sealed class JobFileStorage(StorageOptions options, IHttpClientFactory ht
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".mp4", ".mkv", ".mov", ".avi"
+        ".mp4", ".mkv", ".mov", ".avi", ".m4a", ".mp3", ".wav", ".aac", ".flac", ".ogg", ".webm"
     };
 
     private static readonly IReadOnlyDictionary<string, string> ContentTypeExtensions =
@@ -22,7 +22,15 @@ public sealed class JobFileStorage(StorageOptions options, IHttpClientFactory ht
             ["video/x-m4v"] = ".mp4",
             ["video/quicktime"] = ".mov",
             ["video/x-matroska"] = ".mkv",
-            ["video/x-msvideo"] = ".avi"
+            ["video/x-msvideo"] = ".avi",
+            ["video/webm"] = ".webm",
+            ["audio/mp4"] = ".m4a",
+            ["audio/mpeg"] = ".mp3",
+            ["audio/wav"] = ".wav",
+            ["audio/x-wav"] = ".wav",
+            ["audio/aac"] = ".aac",
+            ["audio/flac"] = ".flac",
+            ["audio/ogg"] = ".ogg"
         };
 
     public async Task<string> SaveUploadAsync(UploadedVideo video, CancellationToken cancellationToken)
@@ -31,7 +39,7 @@ public sealed class JobFileStorage(StorageOptions options, IHttpClientFactory ht
 
         var extension = NormalizeExtension(Path.GetExtension(video.FileName));
         if (!AllowedExtensions.Contains(extension))
-            throw new InvalidOperationException("Unsupported video extension: " + extension);
+            throw new InvalidOperationException("Unsupported media extension: " + extension);
 
         return await WriteVideoAsync(extension, video.FileName, video.Content, cancellationToken);
     }
@@ -152,7 +160,7 @@ public sealed class JobFileStorage(StorageOptions options, IHttpClientFactory ht
 
                 totalBytes += bytesRead;
                 if (totalBytes > options.MaxUploadBytes)
-                    throw new InvalidDataException("The video exceeds the configured size limit.");
+                    throw new InvalidDataException("The file exceeds the configured size limit.");
 
                 await output.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
             }
@@ -170,35 +178,38 @@ public sealed class JobFileStorage(StorageOptions options, IHttpClientFactory ht
     private static void ValidateHeader(string extension, byte[] header, int length)
     {
         if (length < 12)
-            throw new InvalidDataException("The video file is too small to be valid.");
+            throw new InvalidDataException("The media file is too small to be valid.");
 
-        switch (extension)
+        var valid = extension switch
         {
-            case ".mp4":
-            case ".mov":
-                if (header[4] != (byte)'f' || header[5] != (byte)'t' ||
-                    header[6] != (byte)'y' || header[7] != (byte)'p')
-                {
-                    throw new InvalidDataException("The MP4/MOV video has an invalid header.");
-                }
+            ".mp4" or ".mov" or ".m4a" => HasBytes(header, 4, "ftyp"),
+            ".mkv" or ".webm" => header[0] == 0x1A && header[1] == 0x45 &&
+                header[2] == 0xDF && header[3] == 0xA3,
+            ".avi" => HasBytes(header, 0, "RIFF") && HasBytes(header, 8, "AVI "),
+            ".wav" => HasBytes(header, 0, "RIFF") && HasBytes(header, 8, "WAVE"),
+            ".mp3" => HasBytes(header, 0, "ID3") ||
+                (header[0] == 0xFF && (header[1] & 0xE0) == 0xE0),
+            ".aac" => HasBytes(header, 0, "ID3") ||
+                (header[0] == 0xFF && (header[1] & 0xF6) == 0xF0),
+            ".flac" => HasBytes(header, 0, "fLaC"),
+            ".ogg" => HasBytes(header, 0, "OggS"),
+            _ => false
+        };
 
-                break;
-            case ".mkv":
-                if (header[0] != 0x1A || header[1] != 0x45 || header[2] != 0xDF || header[3] != 0xA3)
-                    throw new InvalidDataException("The MKV video has an invalid header.");
+        if (!valid)
+            throw new InvalidDataException(
+                $"The {extension.TrimStart('.').ToUpperInvariant()} file has an invalid header.");
+    }
 
-                break;
-            case ".avi":
-                if (header[0] != (byte)'R' || header[1] != (byte)'I' ||
-                    header[2] != (byte)'F' || header[3] != (byte)'F' ||
-                    header[8] != (byte)'A' || header[9] != (byte)'V' ||
-                    header[10] != (byte)'I' || header[11] != (byte)' ')
-                {
-                    throw new InvalidDataException("The AVI video has an invalid header.");
-                }
-
-                break;
+    private static bool HasBytes(byte[] header, int offset, string expected)
+    {
+        for (var index = 0; index < expected.Length; index++)
+        {
+            if (header[offset + index] != (byte)expected[index])
+                return false;
         }
+
+        return true;
     }
 
     private static Uri ParseUrl(string value)
@@ -244,7 +255,7 @@ public sealed class JobFileStorage(StorageOptions options, IHttpClientFactory ht
             return mapped;
 
         throw new InvalidOperationException(
-            "Unsupported video URL type: " + (string.IsNullOrWhiteSpace(mediaType) ? "unknown" : mediaType));
+            "Unsupported media URL type: " + (string.IsNullOrWhiteSpace(mediaType) ? "unknown" : mediaType));
     }
 
     private static string NormalizeExtension(string extension) =>

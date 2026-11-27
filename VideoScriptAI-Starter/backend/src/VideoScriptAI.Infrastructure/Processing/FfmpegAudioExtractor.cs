@@ -7,7 +7,8 @@ public sealed class FfmpegAudioExtractor(IProcessRunner processRunner, EngineOpt
 {
     private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".mp4", ".mkv", ".mov", ".avi"
+        ".mp4", ".mkv", ".mov", ".avi", ".webm",
+        ".m4a", ".mp3", ".wav", ".aac", ".flac", ".ogg", ".oga", ".opus", ".wma"
     };
 
     public async Task<string> ExtractWavAsync(
@@ -21,7 +22,7 @@ public sealed class FfmpegAudioExtractor(IProcessRunner processRunner, EngineOpt
         if (!File.Exists(videoPath))
             throw new FileNotFoundException("Video file not found.", videoPath);
         if (!SupportedExtensions.Contains(Path.GetExtension(videoPath)))
-            throw new InvalidOperationException("Unsupported video extension: " + Path.GetExtension(videoPath));
+            throw new InvalidOperationException("Unsupported media extension: " + Path.GetExtension(videoPath));
         if (string.IsNullOrWhiteSpace(options.FfmpegPath))
             throw new InvalidOperationException("FFmpeg path is not configured.");
         if (!File.Exists(options.FfmpegPath))
