@@ -8,7 +8,6 @@ import {
   listJobs,
   listMeetings,
   listSummaryProviders,
-  listTtsVoices,
   subscribeToJobProgress
 } from "./api";
 import JobDetails from "./components/JobDetails";
@@ -26,8 +25,7 @@ const bootSteps = [
   { key: "engines", label: "Motores locales (ffmpeg + whisper)" },
   { key: "signalr", label: "SignalR" },
   { key: "jobs", label: "Historial de trabajos" },
-  { key: "meetings", label: "Notas de reunión" },
-  { key: "speech", label: "Voces TTS" }
+  { key: "meetings", label: "Notas de reunión" }
 ] as const;
 
 type BootKey = typeof bootSteps[number]["key"];
@@ -146,15 +144,6 @@ export default function App() {
         if (active) markBoot("meetings", "ready");
       } catch {
         if (active) markBoot("meetings", "failed");
-      }
-    })();
-
-    void (async () => {
-      try {
-        await listTtsVoices();
-        if (active) markBoot("speech", "ready");
-      } catch {
-        if (active) markBoot("speech", "failed");
       }
     })();
 
